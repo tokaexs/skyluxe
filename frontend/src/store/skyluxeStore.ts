@@ -321,11 +321,11 @@ export const useSkyLuxeStore = create<SkyLuxeState>((set, get) => ({
       set({
         profile: {
           id: user.id,
-          name: `${user.first_name} ${user.last_name}`,
+          name: `${user.first_name || user.firstName || ""} ${user.last_name || user.lastName || ""}`.trim(),
           email: user.email,
           phone: user.phone || "+1 (555) 019-9233",
           residence: user.country || "Mumbai, IND",
-          avatar: `${user.first_name[0] || ""}${user.last_name[0] || ""}`.toUpperCase() || "ES",
+          avatar: `${(user.first_name || user.firstName || "E")[0] || ""}${(user.last_name || user.lastName || "S")[0] || ""}`.toUpperCase() || "ES",
           passport: "United States • ••••••892",
           preferences: {
             dietary: "No shellfish. Preferred sparkling water.",
