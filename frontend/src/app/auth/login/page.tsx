@@ -38,7 +38,7 @@ function LoginContent() {
     setError("");
 
     try {
-      const response = await fetch("http://localhost:3001/api/v1/auth/login", {
+      const response = await fetch("http://localhost:5000/api/v1/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -69,7 +69,7 @@ function LoginContent() {
           client_id: GOOGLE_CLIENT_ID,
           callback: async (response: any) => {
             try {
-              const res = await fetch("http://localhost:3001/api/v1/auth/google", {
+              const res = await fetch("http://localhost:5000/api/v1/auth/google", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ id_token: response.credential }),
@@ -103,7 +103,7 @@ function LoginContent() {
         }));
         const dummyToken = `${header}.${payload}.dummy_sig`;
 
-        const res = await fetch("http://localhost:3001/api/v1/auth/google", {
+        const res = await fetch("http://localhost:5000/api/v1/auth/google", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id_token: dummyToken }),
@@ -139,7 +139,7 @@ function LoginContent() {
         const response = await AppleID.auth.signIn();
         const idToken = response.authorization.id_token;
 
-        const res = await fetch("http://localhost:3001/api/v1/auth/apple", {
+        const res = await fetch("http://localhost:5000/api/v1/auth/apple", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id_token: idToken }),
@@ -165,7 +165,7 @@ function LoginContent() {
         }));
         const dummyToken = `${header}.${payload}.dummy_sig`;
 
-        const res = await fetch("http://localhost:3001/api/v1/auth/apple", {
+        const res = await fetch("http://localhost:5000/api/v1/auth/apple", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id_token: dummyToken }),

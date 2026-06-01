@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:3001/api/v1";
+const BASE_URL = "http://localhost:5000/api/v1";
 
 function getCookie(name: string): string | null {
   if (typeof document === "undefined") return null;

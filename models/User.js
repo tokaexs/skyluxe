@@ -44,6 +44,11 @@ const userSchema = new mongoose.Schema({
     unique: true,
     sparse: true
   },
+  appleId: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
   provider: {
     type: String,
     default: 'local'

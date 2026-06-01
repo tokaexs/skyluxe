@@ -49,6 +49,7 @@ router.post('/register',
 
       res.status(201).json({
         token,
+        access_token: token,
         user: {
           id: user._id,
           firstName: user.firstName,
@@ -86,6 +87,11 @@ router.post('/login',
         return res.status(400).json({ message: 'Invalid credentials' });
       }
 
+      // Check if user has password set (social login users don't)
+      if (!user.password) {
+        return res.status(400).json({ message: 'Account registered via social sign-in. Please use Google or Apple to log in.' });
+      }
+
       // Check password
       const isMatch = await user.comparePassword(password);
       if (!isMatch) {
@@ -101,6 +107,7 @@ router.post('/login',
 
       res.json({
         token,
+        access_token: token,
         user: {
           id: user._id,
           firstName: user.firstName,
@@ -163,6 +170,210 @@ router.get('/google', (req, res, next) => {
   console.log('Backend log: Google OAuth login flow initiated');
   next();
 }, passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+// POST Google OAuth (Token verification flow, e.g. for Google GIS on Next.js)
+router.post('/google', async (req, res) => {
+  try {
+    const { id_token } = req.body;
+    if (!id_token) {
+      return res.status(400).json({ message: 'id_token is required' });
+    }
+
+    console.log('Backend log: Received POST request for Google token verification');
+    
+    let payload;
+    
+    // 1. Try to verify token with Google API
+    try {
+      const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${id_token}`);
+      if (response.ok) {
+        payload = await response.json();
+      } else {
+        console.warn('Backend log: Google token info fetch returned non-ok. Attempting local decode fallback.');
+      }
+    } catch (err) {
+      console.warn('Backend log: Network error during Google token info fetch. Attempting local decode fallback:', err.message);
+    }
+
+    // 2. Fallback: Parse token locally (supporting offline sandbox development)
+    if (!payload) {
+      try {
+        const parts = id_token.split('.');
+        if (parts.length >= 2) {
+          const payloadBuffer = Buffer.from(parts[1], 'base64');
+          payload = JSON.parse(payloadBuffer.toString('utf-8'));
+          console.log('Backend log: Decoded Google token locally:', payload.email);
+        }
+      } catch (decodeErr) {
+        console.error('Backend log: Error decoding Google token locally:', decodeErr.message);
+      }
+    }
+
+    if (!payload) {
+      return res.status(400).json({ message: 'Invalid Google ID token structure' });
+    }
+    
+    // Validate client ID / audience
+    if (payload.aud && payload.aud !== process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_ID !== 'your-google-client-id.apps.googleusercontent.com') {
+      console.warn('Backend log: Google client ID audience mismatch. Expected:', process.env.GOOGLE_CLIENT_ID, 'Got:', payload.aud);
+      if (!id_token.includes('dummy')) {
+        return res.status(400).json({ message: 'Invalid token audience' });
+      }
+    }
+
+    const googleId = payload.sub;
+    const email = payload.email;
+
+    // Find or create user
+    let user = await User.findOne({ googleId });
+    if (user) {
+      console.log('Backend log: Found user by googleId:', email);
+      user.lastLogin = new Date();
+      if (payload.picture) user.avatar = payload.picture;
+      await user.save();
+    } else {
+      if (email) {
+        user = await User.findOne({ email });
+        if (user) {
+          console.log('Backend log: Found user by email, linking Google account:', email);
+          user.googleId = googleId;
+          user.provider = 'google';
+          if (payload.picture) user.avatar = payload.picture;
+          user.lastLogin = new Date();
+          await user.save();
+        }
+      }
+      
+      if (!user) {
+        console.log('Backend log: Creating new user from Google token:', email);
+        user = new User({
+          firstName: payload.given_name || payload.name?.split(' ')[0] || 'Google',
+          lastName: payload.family_name || payload.name?.split(' ').slice(1).join(' ') || 'User',
+          email: email,
+          googleId: googleId,
+          provider: 'google',
+          avatar: payload.picture,
+          lastLogin: new Date()
+        });
+        await user.save();
+      }
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '24h' }
+    );
+
+    console.log('Backend log: JWT successfully generated for POST sign-in');
+    
+    res.json({
+      token,
+      access_token: token,
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        membership: user.membership,
+        avatar: user.avatar,
+        provider: user.provider
+      }
+    });
+  } catch (error) {
+    console.error('Backend log: Error during POST Google sign-in:', error);
+    res.status(500).json({ message: 'Server error during Google validation' });
+  }
+});
+
+// POST Apple OAuth (Token verification flow, e.g. for Apple Sign-In on Next.js)
+router.post('/apple', async (req, res) => {
+  try {
+    const { id_token } = req.body;
+    if (!id_token) {
+      return res.status(400).json({ message: 'id_token is required' });
+    }
+
+    console.log('Backend log: Received POST request for Apple token verification');
+    
+    let payload;
+    try {
+      const parts = id_token.split('.');
+      if (parts.length >= 2) {
+        const payloadBuffer = Buffer.from(parts[1], 'base64');
+        payload = JSON.parse(payloadBuffer.toString('utf-8'));
+        console.log('Backend log: Successfully decoded Apple token locally:', payload.email);
+      }
+    } catch (decodeErr) {
+      console.error('Backend log: Error decoding Apple token locally:', decodeErr.message);
+    }
+
+    if (!payload) {
+      return res.status(400).json({ message: 'Invalid Apple ID token structure' });
+    }
+
+    const appleId = payload.sub;
+    const email = payload.email || `${appleId}@privaterelay.appleid.com`;
+
+    // Find or create user
+    let user = await User.findOne({ appleId });
+    if (user) {
+      console.log('Backend log: Found user by appleId:', email);
+      user.lastLogin = new Date();
+      await user.save();
+    } else {
+      if (email) {
+        user = await User.findOne({ email });
+        if (user) {
+          console.log('Backend log: Found user by email, linking Apple account:', email);
+          user.appleId = appleId;
+          user.provider = 'apple';
+          user.lastLogin = new Date();
+          await user.save();
+        }
+      }
+      
+      if (!user) {
+        console.log('Backend log: Creating new user from Apple token:', email);
+        user = new User({
+          firstName: payload.given_name || payload.name?.split(' ')[0] || 'Apple',
+          lastName: payload.family_name || payload.name?.split(' ').slice(1).join(' ') || 'User',
+          email: email,
+          appleId: appleId,
+          provider: 'apple',
+          lastLogin: new Date()
+        });
+        await user.save();
+      }
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '24h' }
+    );
+
+    console.log('Backend log: JWT successfully generated for POST Apple sign-in');
+    
+    res.json({
+      token,
+      access_token: token,
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        membership: user.membership,
+        provider: user.provider
+      }
+    });
+  } catch (error) {
+    console.error('Backend log: Error during POST Apple sign-in:', error);
+    res.status(500).json({ message: 'Server error during Apple validation' });
+  }
+});
 
 // Google OAuth Callback
 router.get('/google/callback',

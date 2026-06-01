@@ -36,8 +36,25 @@ app.use(passport.session());
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Mount API routes
-app.use('/api/auth', require('./routes/auth'));
+// Mount API routes (supporting both legacy /api and Next.js /api/v1 prefixes)
+const authRouter = require('./routes/auth');
+const flightsRouter = require('./routes/flights');
+const conciergeRouter = require('./routes/concierge');
+const membershipRouter = require('./routes/membership');
+
+app.use('/api/auth', authRouter);
+app.use('/api/v1/auth', authRouter);
+
+app.use('/api/flights', flightsRouter);
+app.use('/api/v1/flights', flightsRouter);
+
+app.use('/api/concierge', conciergeRouter);
+app.use('/api/v1/concierge', conciergeRouter);
+app.use('/api/v1/ai/concierge-requests', conciergeRouter);
+
+app.use('/api/membership', membershipRouter);
+app.use('/api/v1/membership', membershipRouter);
+app.use('/api/v1/memberships', membershipRouter);
 
 // Serve HTML pages on specific clean URLs
 app.get('/', (req, res) => {
@@ -100,7 +117,7 @@ app.get('*', (req, res) => {
 });
 
 // Start Server
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
