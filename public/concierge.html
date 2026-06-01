@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Concierge — SkyLuxe</title>
+  <meta name="description" content="Your 24/7 personal AI concierge. Dining reservations, ground transport, cabin configuration, lounge access — all in one place.">
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/lenis@1.1.13/dist/lenis.css">
+  <style>
+    .concierge-hero {
+      min-height: 65vh;
+      position: relative;
+      display: flex;
+      align-items: center;
+      padding-top: 8rem;
+      overflow: hidden;
+      background: var(--void);
+    }
+
+    .concierge-hero::before {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(212,175,55,0.07) 0%, transparent 70%);
+    }
+
+    /* Chat Interface */
+    .chat-section {
+      padding: 5rem 0;
+      background: var(--abyss);
+      position: relative;
+    }
+
+    .chat-layout {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 4rem;
+      align-items: start;
+    }
+
+    .chat-window {
+      background: var(--glass-bg);
+      border: var(--glass-border);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      position: sticky;
+      top: 100px;
+    }
+
+    .chat-header {
+      padding: 1.25rem 1.5rem;
+      background: rgba(212,175,55,0.05);
+      border-bottom: var(--glass-border);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .chat-status-dot {
+      width: 8px; height: 8px;
+      background: #4ade80;
+      border-radius: 50%;
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.8); }
+    }
+
+    .chat-avatar {
+      width: 36px; height: 36px;
+      background: var(--gold-gradient);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--void);
+      font-size: 0.9rem;
+    }
+
+    .chat-name {
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .chat-sub {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .chat-messages {
+      padding: 1.5rem;
+      min-height: 340px;
+      max-height: 420px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .chat-bubble {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+      max-width: 85%;
+    }
+
+    .chat-bubble.user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+
+    .bubble-avatar {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      flex-shrink: 0;
+    }
+
+    .bubble-avatar.ai { background: var(--gold-gradient); color: var(--void); }
+    .bubble-avatar.user { background: rgba(255,255,255,0.08); color: var(--text-primary); }
+
+    .bubble-text {
+      background: rgba(255,255,255,0.05);
+      border: var(--glass-border);
+      border-radius: 14px;
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      color: var(--text-secondary);
+    }
+
+    .bubble-text.ai-text {
+      background: rgba(212,175,55,0.06);
+      border-color: rgba(212,175,55,0.12);
+      color: var(--text-primary);
+    }
+
+    .typing-indicator {
+      display: flex;
+      gap: 4px;
+      padding: 0.75rem 1rem;
+      background: rgba(212,175,55,0.06);
+      border: rgba(212,175,55,0.12) 1px solid;
+      border-radius: 14px;
+    }
+
+    .typing-dot {
+      width: 6px; height: 6px;
+      background: var(--gold);
+      border-radius: 50%;
+      animation: typingDot 1.4s ease-in-out infinite;
+    }
+
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typingDot {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-6px); opacity: 1; }
+    }
+
+    .chat-input-area {
+      padding: 1.25rem 1.5rem;
+      border-top: var(--glass-border);
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-end;
+    }
+
+    .chat-input {
+      flex: 1;
+      background: rgba(255,255,255,0.04);
+      border: var(--glass-border);
+      border-radius: 12px;
+      padding: 0.75rem 1rem;
+      color: var(--text-primary);
+      font-size: 0.875rem;
+      font-family: var(--font-body);
+      resize: none;
+      outline: none;
+      min-height: 44px;
+      max-height: 100px;
+      transition: border-color var(--transition-fast);
+    }
+
+    .chat-input:focus { border-color: rgba(212,175,55,0.4); }
+    .chat-input::placeholder { color: var(--text-muted); }
+
+    .chat-send-btn {
+      width: 40px; height: 40px;
+      background: var(--gold-gradient);
+      border: none;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--void);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+    .chat-send-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 16px rgba(212,175,55,0.4);
+    }
+
+    .quick-prompts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      padding: 0 1.5rem 1rem;
+    }
+
+    .quick-prompt {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-pill);
+      padding: 0.35rem 0.85rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      font-family: var(--font-body);
+    }
+
+    .quick-prompt:hover {
+      border-color: var(--border-gold);
+      color: var(--gold);
+      background: var(--gold-dim);
+    }
+
+    /* Services Grid */
+    .services-section {
+      padding: 6rem 0;
+      background: var(--void);
+    }
+
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
+      margin-top: 4rem;
+    }
+
+    .service-item {
+      background: var(--glass-bg-light);
+      border: var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      cursor: pointer;
+      transition: all var(--transition-base);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .service-item:hover {
+      transform: translateY(-6px);
+      border-color: var(--border-gold);
+      box-shadow: var(--shadow-gold);
+    }
+
+    .service-item::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--gold-gradient-subtle);
+      opacity: 0;
+      transition: opacity var(--transition-base);
+    }
+
+    .service-item:hover::after { opacity: 1; }
+
+    .service-num {
+      font-family: var(--font-display);
+      font-size: 3.5rem;
+      font-weight: 800;
+      color: rgba(212,175,55,0.07);
+      position: absolute;
+      top: 0.5rem; right: 1rem;
+      line-height: 1;
+    }
+
+    .service-icon {
+      font-size: 1.5rem;
+      color: var(--gold);
+      margin-bottom: 1rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .service-name {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .service-desc {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      line-height: 1.65;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Request Form */
+    .request-section {
+      padding: 6rem 0;
+      background: var(--abyss);
+    }
+
+    @media (max-width: 900px) {
+      .chat-layout { grid-template-columns: 1fr; }
+      .chat-window { position: static; }
+      .services-grid { grid-template-columns: 1fr; max-width: 480px; margin: 4rem auto 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="cursor-dot" id="cursorDot"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+  <div class="noise-overlay"></div>
+
+  <!-- NAV -->
+  <nav class="skyluxe-nav" id="mainNav">
+    <a href="/" class="nav-logo" id="navLogo">
+      <div class="nav-logo-mark">SL</div>
+      <span class="nav-logo-text">Sky<span>Luxe</span></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/" class="nav-link" id="navHome">Home</a></li>
+      <li><a href="/private-jets" class="nav-link" id="navJets">Private Jets</a></li>
+      <li><a href="/flights" class="nav-link" id="navFlights">Flights</a></li>
+      <li><a href="/concierge" class="nav-link active" id="navConcierge">Concierge</a></li>
+      <li><a href="/membership" class="nav-link" id="navMembership">Membership</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="/login" class="nav-btn-ghost" id="navSignIn">Sign In</a>
+      <a href="/register" class="nav-btn-gold" id="navRegister"><i class="fas fa-crown" style="font-size:0.75rem;"></i>&nbsp; Join Elite</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="concierge-hero" id="conciergeHero">
+    <div class="container">
+      <div style="max-width:680px;">
+        <div class="hero-eyebrow" data-anim="fade-in">
+          <span style="width:6px;height:6px;background:#4ade80;border-radius:50%;display:inline-block;"></span>
+          SkyMind™ AI — Online Now
+        </div>
+        <h1 class="hero-title" data-anim="fade-up">
+          Your Personal<br>
+          <span class="gold-line">Sky Concierge.</span>
+        </h1>
+        <p class="hero-subtitle" data-anim="fade-up">
+          Powered by SkyMind™ — our AI that knows your preferences before you ask. Available 24/7, across every time zone, at every altitude.
+        </p>
+        <div class="hero-actions" data-anim="fade-up">
+          <a href="#chat" class="btn btn-primary btn-xl" id="startChatBtn">
+            <i class="fas fa-comments"></i> Start Conversation
+          </a>
+          <a href="#services" class="btn btn-secondary btn-xl" id="viewServicesBtn">
+            <i class="fas fa-list"></i> View Services
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHAT INTERFACE -->
+  <section class="chat-section" id="chat">
+    <div class="container">
+      <div class="chat-layout">
+        <!-- CHAT WINDOW -->
+        <div>
+          <div class="section-label no-lines" style="margin-bottom:1rem;" data-anim="fade-in">Live AI Chat</div>
+          <h2 class="section-title" style="margin-bottom:1rem;" data-anim="fade-up">Talk to SkyMind™</h2>
+          <p class="section-subtitle" data-anim="fade-up">
+            Ask anything — from restaurant recommendations in Dubai to real-time flight status, cabin configuration requests, and more.
+          </p>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:2.5rem;" data-anim="fade-up">
+            <div style="display:flex;align-items:center;gap:0.6rem;font-size:0.85rem;color:var(--text-secondary);">
+              <i class="fas fa-check-circle" style="color:var(--gold);"></i> No waitlist
+            </div>
+            <div style="display:flex;align-items:center;gap:0.6rem;font-size:0.85rem;color:var(--text-secondary);">
+              <i class="fas fa-check-circle" style="color:var(--gold);"></i> Instant responses
+            </div>
+            <div style="display:flex;align-items:center;gap:0.6rem;font-size:0.85rem;color:var(--text-secondary);">
+              <i class="fas fa-check-circle" style="color:var(--gold);"></i> 47 languages
+            </div>
+            <div style="display:flex;align-items:center;gap:0.6rem;font-size:0.85rem;color:var(--text-secondary);">
+              <i class="fas fa-check-circle" style="color:var(--gold);"></i> 100% private
+            </div>
+          </div>
+        </div>
+
+        <!-- CHAT UI -->
+        <div class="chat-window" data-anim="fade-up">
+          <div class="chat-header">
+            <div class="chat-avatar"><i class="fas fa-robot"></i></div>
+            <div>
+              <div class="chat-name">SkyMind™ Concierge</div>
+              <div class="chat-sub" style="display:flex;align-items:center;gap:0.3rem;">
+                <span class="chat-status-dot"></span> Online — Powered by SkyLuxe AI
+              </div>
+            </div>
+          </div>
+
+          <div class="chat-messages" id="chatMessages">
+            <!-- Initial AI message -->
+            <div class="chat-bubble" id="initialMsg">
+              <div class="bubble-avatar ai"><i class="fas fa-robot"></i></div>
+              <div class="bubble-text ai-text">
+                Good day! I'm SkyMind™, your personal SkyLuxe concierge. How may I assist you today? I can help with flight bookings, restaurant reservations, ground transport, cabin preferences, and much more.
+              </div>
+            </div>
+          </div>
+
+          <div class="quick-prompts">
+            <button class="quick-prompt" id="qp1" onclick="sendQuickPrompt('Book a restaurant in Dubai')">🍽️ Dubai dining</button>
+            <button class="quick-prompt" id="qp2" onclick="sendQuickPrompt('Arrange chauffeur service')">🚗 Chauffeur</button>
+            <button class="quick-prompt" id="qp3" onclick="sendQuickPrompt('My flight status')">✈️ Flight status</button>
+            <button class="quick-prompt" id="qp4" onclick="sendQuickPrompt('Upgrade my cabin class')">⬆️ Upgrade seat</button>
+          </div>
+
+          <div class="chat-input-area">
+            <textarea class="chat-input" id="chatInput" placeholder="Ask SkyMind anything..." rows="1" maxlength="500"></textarea>
+            <button class="chat-send-btn" id="chatSendBtn" aria-label="Send message">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICES -->
+  <section class="services-section" id="services">
+    <div class="container">
+      <div class="text-center" data-anim="fade-in">
+        <div class="section-label" style="justify-content:center;">What We Handle</div>
+        <h2 class="section-title" style="margin-top:0.75rem;">Anything. Anywhere. Any Time.</h2>
+        <p class="section-subtitle" style="margin:1rem auto 0; text-align:center;">
+          Your concierge doesn't just book — it anticipates, orchestrates, and perfects every detail.
+        </p>
+      </div>
+
+      <div class="services-grid" data-anim="fade-up">
+        <div class="service-item" id="svcDining" onclick="promptConcierge('Book a Michelin restaurant')">
+          <div class="service-num">01</div>
+          <div class="service-icon"><i class="fas fa-utensils"></i></div>
+          <div class="service-name">Fine Dining Reservations</div>
+          <div class="service-desc">Michelin-starred restaurants at your destination, pre-ordered menus, dietary requirements handled automatically.</div>
+        </div>
+        <div class="service-item" id="svcTransport" onclick="promptConcierge('Arrange ground transport')">
+          <div class="service-num">02</div>
+          <div class="service-icon"><i class="fas fa-car-side"></i></div>
+          <div class="service-name">Ground Transport</div>
+          <div class="service-desc">Rolls-Royce, Mercedes S-Class, or helicopter transfers from tarmac to hotel — seamlessly coordinated.</div>
+        </div>
+        <div class="service-item" id="svcLounge" onclick="promptConcierge('Book lounge access')">
+          <div class="service-num">03</div>
+          <div class="service-icon"><i class="fas fa-couch"></i></div>
+          <div class="service-name">Lounge & Terminal Access</div>
+          <div class="service-desc">VIP terminal access at 600+ airports worldwide. Your escort meets you at curbside.</div>
+        </div>
+        <div class="service-item" id="svcSpa" onclick="promptConcierge('Book spa at hotel')">
+          <div class="service-num">04</div>
+          <div class="service-icon"><i class="fas fa-spa"></i></div>
+          <div class="service-name">Spa & Wellness</div>
+          <div class="service-desc">In-flight spa treatments, destination wellness bookings, and recovery programs tailored to your itinerary.</div>
+        </div>
+        <div class="service-item" id="svcCabin" onclick="promptConcierge('Configure my cabin')">
+          <div class="service-num">05</div>
+          <div class="service-icon"><i class="fas fa-plane-up"></i></div>
+          <div class="service-name">Cabin Configuration</div>
+          <div class="service-desc">Custom catering, bedding preferences, temperature settings, and entertainment pre-loaded before you board.</div>
+        </div>
+        <div class="service-item" id="svcEvent" onclick="promptConcierge('Book event tickets')">
+          <div class="service-num">06</div>
+          <div class="service-icon"><i class="fas fa-ticket"></i></div>
+          <div class="service-name">Events & Experiences</div>
+          <div class="service-desc">Sold-out events, private exhibitions, Formula 1 paddock passes — our network unlocks the extraordinary.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REQUEST FORM -->
+  <section class="request-section" id="request">
+    <div class="container">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:5rem; align-items:center;">
+        <div data-anim="fade-up">
+          <div class="section-label no-lines" style="margin-bottom:1rem;">Concierge Request</div>
+          <h2 class="section-title">Submit a Bespoke Request</h2>
+          <p class="section-subtitle" style="margin-top:1rem;">
+            For extraordinary requests that go beyond the AI — our human concierge team handles the truly exceptional.
+          </p>
+          <div style="margin-top:2rem; display:flex; flex-direction:column; gap:1rem;">
+            <div style="display:flex;align-items:center;gap:0.75rem;font-size:0.875rem;color:var(--text-secondary);">
+              <div style="width:36px;height:36px;background:var(--gold-dim);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--gold);flex-shrink:0;"><i class="fas fa-clock"></i></div>
+              Response within 15 minutes, 24/7
+            </div>
+            <div style="display:flex;align-items:center;gap:0.75rem;font-size:0.875rem;color:var(--text-secondary);">
+              <div style="width:36px;height:36px;background:var(--gold-dim);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--gold);flex-shrink:0;"><i class="fas fa-user-tie"></i></div>
+              Dedicated human concierge manager
+            </div>
+            <div style="display:flex;align-items:center;gap:0.75rem;font-size:0.875rem;color:var(--text-secondary);">
+              <div style="width:36px;height:36px;background:var(--gold-dim);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--gold);flex-shrink:0;"><i class="fas fa-shield-halved"></i></div>
+              Complete discretion guaranteed
+            </div>
+          </div>
+        </div>
+
+        <div data-anim="fade-up">
+          <div class="quote-card">
+            <div class="quote-card-title">Submit Request</div>
+            <form id="conciergeForm">
+              <div class="form-group">
+                <label class="form-label" for="cqName">Your Name</label>
+                <input class="form-control" type="text" id="cqName" placeholder="Full name" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cqEmail">Email</label>
+                <input class="form-control" type="email" id="cqEmail" placeholder="you@example.com" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cqService">Service Type</label>
+                <select class="form-control" id="cqService">
+                  <option>Fine Dining Reservation</option>
+                  <option>Ground Transport</option>
+                  <option>Lounge & Terminal Access</option>
+                  <option>Spa & Wellness</option>
+                  <option>Cabin Configuration</option>
+                  <option>Events & Experiences</option>
+                  <option>Other Bespoke Request</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cqDetails">Request Details</label>
+                <textarea class="form-control" id="cqDetails" rows="4" placeholder="Describe your request in detail..." style="resize:vertical;"></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary w-full" id="cqSubmitBtn" style="padding:0.95rem; border-radius:12px; justify-content:center; margin-top:0.5rem;">
+                <i class="fas fa-concierge-bell"></i>&nbsp; Submit Request
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TOAST -->
+  <div class="toast-container" id="toastContainer" role="alert" aria-live="polite"></div>
+
+  <!-- FOOTER -->
+  <footer class="skyluxe-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="/" class="nav-logo" style="margin-bottom:0.5rem;"><div class="nav-logo-mark">SL</div><span class="nav-logo-text">Sky<span>Luxe</span></span></a>
+          <p class="footer-tagline">AI-powered luxury concierge service available 24/7 across every time zone.</p>
+        </div>
+        <div><div class="footer-col-title">Services</div><ul class="footer-links"><li><a href="/private-jets">Private Jets</a></li><li><a href="/flights">Flights</a></li><li><a href="/membership">Memberships</a></li></ul></div>
+        <div><div class="footer-col-title">Support</div><ul class="footer-links"><li><a href="/contact">Contact</a></li><li><a href="/faq">FAQ</a></li></ul></div>
+        <div><div class="footer-col-title">Contact</div><ul class="footer-links"><li><a href="tel:+18005795893"><i class="fas fa-phone" style="color:var(--gold); font-size:0.7rem;"></i> +1 800 SKYLUXE</a></li></ul></div>
+      </div>
+      <div class="footer-bottom"><p>© 2025 SkyLuxe Aviation Ltd.</p><div class="footer-bottom-links"><a href="/privacy">Privacy</a><a href="/terms">Terms</a></div></div>
+    </div>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    // ── CURSOR ──
+    const dot=document.getElementById('cursorDot'),ring=document.getElementById('cursorRing');
+    let mx=0,my=0,rx=0,ry=0;
+    document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;dot.style.left=mx+'px';dot.style.top=my+'px';});
+    (function ar(){rx+=(mx-rx)*0.1;ry+=(my-ry)*0.1;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(ar);})();
+
+    // ── LENIS ──
+    const lenis=new Lenis({duration:1.3,easing:t=>Math.min(1,1.001-Math.pow(2,-10*t))});
+    function raf(t){lenis.raf(t);requestAnimationFrame(raf);}
+    requestAnimationFrame(raf);
+
+    // ── NAV ──
+    const nav=document.getElementById('mainNav');
+    window.addEventListener('scroll',()=>nav.classList.toggle('scrolled',window.scrollY>60));
+
+    // ── GSAP ──
+    gsap.registerPlugin(ScrollTrigger);
+    gsap.from('.hero-eyebrow',{y:20,opacity:0,duration:0.8,ease:'power3.out'});
+    gsap.from('.hero-title',{y:40,opacity:0,duration:1.1,delay:0.15,ease:'power4.out'});
+    gsap.from('.hero-subtitle',{y:30,opacity:0,duration:0.9,delay:0.3,ease:'power3.out'});
+    gsap.from('.hero-actions',{y:20,opacity:0,duration:0.8,delay:0.45,ease:'power3.out'});
+    gsap.utils.toArray('[data-anim="fade-up"]').forEach(el=>{
+      gsap.from(el,{scrollTrigger:{trigger:el,start:'top 85%'},y:50,opacity:0,duration:0.9,ease:'power3.out'});
+    });
+    gsap.utils.toArray('[data-anim="fade-in"]').forEach(el=>{
+      gsap.from(el,{scrollTrigger:{trigger:el,start:'top 88%'},opacity:0,duration:0.7,ease:'power2.out'});
+    });
+    gsap.from('.service-item',{scrollTrigger:{trigger:'.services-grid',start:'top 80%'},y:60,opacity:0,duration:0.8,stagger:0.12,ease:'power3.out'});
+    gsap.from('.chat-window',{scrollTrigger:{trigger:'.chat-window',start:'top 80%'},y:40,opacity:0,duration:0.9,ease:'power4.out'});
+
+    // ── AI CHAT SYSTEM ──
+    const AI_RESPONSES = {
+      restaurant: ["I'd be delighted to arrange your dining experience! At the Burj Al Arab's Burj Al Arab Restaurant or Nobu, I can secure your table for tonight. Shall I proceed? Just confirm your party size.", "Excellent choice! I'll reach out to our culinary network. Do you have any dietary requirements I should note?"],
+      transport: ["I'll arrange your ground transport immediately. Our fleet includes Rolls-Royce Phantom, Mercedes S-Class, and for special occasions, a Bentley Flying Spur. Which do you prefer?", "Your chauffeur will be ready 30 minutes before your arrival. I'll send the driver's contact and real-time tracking to your registered number."],
+      flight: ["Your flight SL-G700 DXB→JFK is currently On Time, departing at 21:30. Your Gulfstream G700 is being prepped at the private terminal. Shall I send the boarding details?", "I'm checking all your upcoming flights now. I'll have a full status update within moments."],
+      upgrade: ["I can initiate an upgrade request for your reservation. Based on your Platinum membership, you're eligible for complimentary upgrades on this route. Shall I proceed?", "Your upgrade has been processed! You'll now enjoy First Class cabin on this flight, complete with a flat-bed suite and personal butler service."],
+      default: ["I understand your request. As your dedicated SkyMind™ concierge, I'll handle this personally. Could you provide a few more details so I can arrange everything perfectly?", "Absolutely! I'm on it. Our concierge team has extensive connections across 180+ destinations. I'll have options ready for you momentarily.", "Consider it done. I've already initiated your request through our network. You'll receive a confirmation within 10 minutes. Is there anything else I can assist with?"]
+    };
+
+    function getAIResponse(text) {
+      const lower = text.toLowerCase();
+      if (lower.includes('restaurant') || lower.includes('dining') || lower.includes('food')) return AI_RESPONSES.restaurant[Math.floor(Math.random()*AI_RESPONSES.restaurant.length)];
+      if (lower.includes('car') || lower.includes('transport') || lower.includes('chauffeur') || lower.includes('drive')) return AI_RESPONSES.transport[Math.floor(Math.random()*AI_RESPONSES.transport.length)];
+      if (lower.includes('flight') || lower.includes('status') || lower.includes('plane')) return AI_RESPONSES.flight[Math.floor(Math.random()*AI_RESPONSES.flight.length)];
+      if (lower.includes('upgrade') || lower.includes('cabin') || lower.includes('seat') || lower.includes('class')) return AI_RESPONSES.upgrade[Math.floor(Math.random()*AI_RESPONSES.upgrade.length)];
+      return AI_RESPONSES.default[Math.floor(Math.random()*AI_RESPONSES.default.length)];
+    }
+
+    function addMessage(text, isUser) {
+      const container = document.getElementById('chatMessages');
+      const bubble = document.createElement('div');
+      bubble.className = 'chat-bubble' + (isUser ? ' user' : '');
+      bubble.innerHTML = `
+        <div class="bubble-avatar ${isUser?'user':'ai'}">
+          <i class="fas ${isUser?'fa-user':'fa-robot'}"></i>
+        </div>
+        <div class="bubble-text ${isUser?'':'ai-text'}">${text}</div>
+      `;
+      container.appendChild(bubble);
+      container.scrollTop = container.scrollHeight;
+      gsap.from(bubble, {y:15, opacity:0, duration:0.4, ease:'power2.out'});
+    }
+
+    function addTypingIndicator() {
+      const container = document.getElementById('chatMessages');
+      const typing = document.createElement('div');
+      typing.className = 'chat-bubble';
+      typing.id = 'typingIndicator';
+      typing.innerHTML = `
+        <div class="bubble-avatar ai"><i class="fas fa-robot"></i></div>
+        <div class="typing-indicator">
+          <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+        </div>
+      `;
+      container.appendChild(typing);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function removeTypingIndicator() {
+      const indicator = document.getElementById('typingIndicator');
+      if (indicator) indicator.remove();
+    }
+
+    async function sendMessage(text) {
+      if (!text.trim()) return;
+      addMessage(text, true);
+      addTypingIndicator();
+
+      const delay = 800 + Math.random() * 700;
+      await new Promise(r => setTimeout(r, delay));
+
+      removeTypingIndicator();
+      const response = getAIResponse(text);
+
+      // Try real API first
+      try {
+        const res = await fetch('http://localhost:5001/api/concierge', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ message: text, bookingId: 'DEMO001' })
+        });
+        // Even if API works, use AI response for realistic behavior
+      } catch {}
+
+      addMessage(response, false);
+    }
+
+    document.getElementById('chatSendBtn').addEventListener('click', () => {
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+      sendMessage(text);
+      input.value = '';
+      input.style.height = 'auto';
+    });
+
+    document.getElementById('chatInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        document.getElementById('chatSendBtn').click();
+      }
+    });
+
+    // Auto-resize textarea
+    document.getElementById('chatInput').addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+    });
+
+    function sendQuickPrompt(text) {
+      document.getElementById('chatInput').value = text;
+      document.getElementById('chatSendBtn').click();
+    }
+
+    function promptConcierge(text) {
+      document.querySelector('#chat').scrollIntoView({ behavior: 'smooth' });
+      setTimeout(() => {
+        document.getElementById('chatInput').value = text;
+        document.getElementById('chatInput').focus();
+      }, 800);
+    }
+
+    // ── CONCIERGE FORM ──
+    document.getElementById('conciergeForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('cqSubmitBtn');
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>&nbsp; Submitting...';
+      btn.disabled = true;
+
+      try {
+        await fetch('http://localhost:5001/api/concierge', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({
+            name: document.getElementById('cqName').value,
+            email: document.getElementById('cqEmail').value,
+            service: document.getElementById('cqService').value,
+            details: document.getElementById('cqDetails').value
+          })
+        });
+      } catch {}
+
+      await new Promise(r=>setTimeout(r, 1000));
+      showToast('Request Received', 'Your concierge team will respond within 15 minutes.', 'success');
+      e.target.reset();
+      btn.innerHTML = '<i class="fas fa-concierge-bell"></i>&nbsp; Submit Request';
+      btn.disabled = false;
+    });
+
+    // ── TOAST ──
+    function showToast(title, msg, type='info') {
+      const c=document.getElementById('toastContainer');
+      const icon=type==='success'?'fa-circle-check':type==='error'?'fa-circle-xmark':'fa-circle-info';
+      const t=document.createElement('div');
+      t.className=`toast ${type}`;
+      t.innerHTML=`<i class="fas ${icon} toast-icon"></i><div><div class="toast-title">${title}</div><div class="toast-message">${msg}</div></div>`;
+      c.appendChild(t);
+      setTimeout(()=>{t.style.transition='all 0.4s ease';t.style.opacity='0';t.style.transform='translateX(110%)';setTimeout(()=>t.remove(),400);},3500);
+    }
+
+    // ── PAGE TRANSITIONS ──
+    document.querySelectorAll('a[href^="/"]').forEach(link=>{
+      link.addEventListener('click',function(e){
+        e.preventDefault();
+        gsap.to('body',{opacity:0,duration:0.35,onComplete:()=>{window.location.href=this.getAttribute('href');}});
+      });
+    });
+    gsap.from('body',{opacity:0,duration:0.4});
+  </script>
+</body>
+</html>

@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account — SkyLuxe</title>
+  <meta name="description" content="Join SkyLuxe — the world's premier luxury aviation platform. Create your free account and access private jets, first-class flights, and AI concierge.">
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    html, body { height: 100%; }
+
+    .auth-page {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .auth-visual {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .auth-visual img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      animation: authZoom 20s ease-in-out infinite alternate;
+    }
+
+    @keyframes authZoom {
+      from { transform: scale(1); }
+      to { transform: scale(1.08); }
+    }
+
+    .auth-visual-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(3,3,5,0.55) 0%, rgba(3,3,5,0.2) 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 3rem;
+    }
+
+    .auth-visual-features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+    }
+
+    .visual-feature {
+      background: rgba(3,3,5,0.72);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(212,175,55,0.2);
+      border-radius: 12px;
+      padding: 0.85rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .visual-feature-icon {
+      color: var(--gold);
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    .auth-visual-quote {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.35;
+    }
+
+    .auth-panel {
+      background: var(--obsidian);
+      overflow-y: auto;
+      padding: 3rem 4rem;
+      position: relative;
+    }
+
+    .auth-panel::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--gold-gradient);
+    }
+
+    .auth-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      margin-bottom: 2.5rem;
+      transition: color var(--transition-fast);
+    }
+
+    .auth-back:hover { color: var(--text-primary); }
+
+    .input-with-icon {
+      position: relative;
+    }
+
+    .input-with-icon .field-icon {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      pointer-events: none;
+      transition: color var(--transition-fast);
+    }
+
+    .input-with-icon:focus-within .field-icon { color: var(--gold); }
+
+    .input-with-icon .form-control {
+      padding-left: 2.75rem;
+    }
+
+    .input-with-icon.password-wrapper .toggle-password {
+      position: absolute;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: color var(--transition-fast);
+    }
+    .input-with-icon.password-wrapper .toggle-password:hover { color: var(--gold); }
+
+    .password-strength {
+      margin-top: 0.5rem;
+      display: flex;
+      gap: 0.3rem;
+    }
+
+    .strength-bar {
+      flex: 1;
+      height: 3px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 3px;
+      transition: background 0.3s ease;
+    }
+
+    .strength-bar.weak { background: #ef4444; }
+    .strength-bar.medium { background: #f59e0b; }
+    .strength-bar.strong { background: #22c55e; }
+
+    .strength-label {
+      font-size: 0.72rem;
+      margin-top: 0.3rem;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0 1rem;
+    }
+
+    .terms-check {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .terms-check input[type="checkbox"] {
+      accent-color: var(--gold);
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .terms-check a { color: var(--gold); text-decoration: none; }
+    .terms-check a:hover { text-decoration: underline; }
+
+    .error-message {
+      display: none;
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.25);
+      border-radius: var(--radius-md);
+      padding: 0.75rem 1rem;
+      font-size: 0.85rem;
+      color: #f87171;
+      margin-bottom: 1.25rem;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .error-message.visible { display: flex; }
+
+    @media (max-width: 900px) {
+      .auth-page { grid-template-columns: 1fr; }
+      .auth-visual { display: none; }
+      .auth-panel { padding: 3rem 1.5rem; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="cursor-dot" id="cursorDot"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <div class="auth-page">
+    <!-- Visual Side -->
+    <div class="auth-visual">
+      <img src="/images/hero-private-jet.jpg" alt="Luxury private jet" loading="eager">
+      <div class="auth-visual-overlay">
+        <div class="auth-visual-features">
+          <div class="visual-feature">
+            <i class="visual-feature-icon fas fa-plane"></i> 340+ Aircraft
+          </div>
+          <div class="visual-feature">
+            <i class="visual-feature-icon fas fa-coins"></i> SkyCoins Rewards
+          </div>
+          <div class="visual-feature">
+            <i class="visual-feature-icon fas fa-robot"></i> AI Concierge
+          </div>
+          <div class="visual-feature">
+            <i class="visual-feature-icon fas fa-crown"></i> VIP Benefits
+          </div>
+        </div>
+        <div class="auth-visual-quote">"Join 12,000+ elite travelers who fly with SkyLuxe."</div>
+      </div>
+    </div>
+
+    <!-- Registration Panel -->
+    <div class="auth-panel">
+      <a href="/" class="auth-back" id="backHomeLink">
+        <i class="fas fa-arrow-left"></i> Back to SkyLuxe
+      </a>
+
+      <a href="/" class="nav-logo" id="authLogoLink" style="margin-bottom:2rem; display:inline-flex;">
+        <div class="nav-logo-mark">SL</div>
+        <span class="nav-logo-text">Sky<span>Luxe</span></span>
+      </a>
+
+      <h1 class="auth-title">Create your account.</h1>
+      <p class="auth-subtitle">Join the world's premier luxury aviation platform — free to start.</p>
+
+      <!-- Error -->
+      <div class="error-message" id="regError">
+        <i class="fas fa-circle-xmark"></i>
+        <span id="regErrorText">Something went wrong. Please try again.</span>
+      </div>
+
+      <!-- Social Signup -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:1.25rem;">
+        <button class="social-btn" type="button" id="appleRegBtn">
+          <i class="fab fa-apple"></i> Continue with Apple
+        </button>
+        <button class="social-btn" type="button" id="googleRegBtn">
+          <i class="fab fa-google"></i> Continue with Google
+        </button>
+      </div>
+
+      <div class="auth-divider">or register with email</div>
+
+      <!-- Registration Form -->
+      <form id="registerForm" novalidate>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="firstNameInput">First Name</label>
+            <div class="input-with-icon">
+              <i class="field-icon fas fa-user"></i>
+              <input class="form-control" type="text" id="firstNameInput" placeholder="First name" autocomplete="given-name" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="lastNameInput">Last Name</label>
+            <div class="input-with-icon">
+              <i class="field-icon fas fa-user"></i>
+              <input class="form-control" type="text" id="lastNameInput" placeholder="Last name" autocomplete="family-name" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="emailRegInput">Email Address</label>
+          <div class="input-with-icon">
+            <i class="field-icon fas fa-envelope"></i>
+            <input class="form-control" type="email" id="emailRegInput" placeholder="you@example.com" autocomplete="email" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="phoneInput">Phone Number <span style="color:var(--text-muted); font-weight:400;">(optional)</span></label>
+          <div class="input-with-icon">
+            <i class="field-icon fas fa-phone"></i>
+            <input class="form-control" type="tel" id="phoneInput" placeholder="+91 98765 43210" autocomplete="tel">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="pwdRegInput">Password</label>
+          <div class="input-with-icon password-wrapper">
+            <i class="field-icon fas fa-lock"></i>
+            <input class="form-control" type="password" id="pwdRegInput" placeholder="Create a strong password" autocomplete="new-password" required>
+            <button class="toggle-password" type="button" id="togglePwdReg">
+              <i class="fas fa-eye" id="eyeIconReg"></i>
+            </button>
+          </div>
+          <div class="password-strength">
+            <div class="strength-bar" id="sb1"></div>
+            <div class="strength-bar" id="sb2"></div>
+            <div class="strength-bar" id="sb3"></div>
+            <div class="strength-bar" id="sb4"></div>
+          </div>
+          <div class="strength-label" id="strengthLabel" style="color:var(--text-muted);"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="membershipPref">Preferred Membership</label>
+          <div class="input-with-icon">
+            <i class="field-icon fas fa-crown"></i>
+            <select class="form-control" id="membershipPref">
+              <option value="silver">Silver (₹25,000/yr)</option>
+              <option value="gold" selected>Gold (₹50,000/yr) — Most Popular</option>
+              <option value="platinum">Platinum (₹1,00,000/yr)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-bottom:1.5rem;">
+          <label class="terms-check">
+            <input type="checkbox" id="termsCheck" required>
+            I agree to SkyLuxe's <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>
+          </label>
+        </div>
+
+        <div style="margin-bottom:1.25rem;">
+          <label class="terms-check">
+            <input type="checkbox" id="marketingCheck">
+            Send me exclusive offers, flight deals, and member updates
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full" id="regSubmitBtn" style="padding:1rem; font-size:1rem; border-radius:12px; justify-content:center;">
+          <i class="fas fa-user-plus"></i>&nbsp; Create My Account
+        </button>
+      </form>
+
+      <div class="auth-footer" style="margin-top:1.5rem;">
+        Already have an account? <a href="/login" id="goLoginLink">Sign in →</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    // ── CURSOR ──
+    const dot = document.getElementById('cursorDot');
+    const ring = document.getElementById('cursorRing');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; dot.style.left = mx+'px'; dot.style.top = my+'px'; });
+    (function animRing() { rx += (mx-rx)*0.1; ry += (my-ry)*0.1; ring.style.left = rx+'px'; ring.style.top = ry+'px'; requestAnimationFrame(animRing); })();
+    document.querySelectorAll('a, button').forEach(el => {
+      el.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
+      el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-hover'));
+    });
+
+    // ── ANIMATIONS ──
+    gsap.from('.auth-panel > *', { y: 20, opacity: 0, duration: 0.7, stagger: 0.08, ease: 'power3.out', delay: 0.2 });
+
+    // ── PASSWORD TOGGLE ──
+    document.getElementById('togglePwdReg').addEventListener('click', () => {
+      const pwd = document.getElementById('pwdRegInput');
+      const ico = document.getElementById('eyeIconReg');
+      const hidden = pwd.type === 'password';
+      pwd.type = hidden ? 'text' : 'password';
+      ico.className = hidden ? 'fas fa-eye-slash' : 'fas fa-eye';
+    });
+
+    // ── PASSWORD STRENGTH ──
+    const pwdInput = document.getElementById('pwdRegInput');
+    const strengthBars = [
+      document.getElementById('sb1'),
+      document.getElementById('sb2'),
+      document.getElementById('sb3'),
+      document.getElementById('sb4')
+    ];
+    const strengthLabel = document.getElementById('strengthLabel');
+
+    function getStrength(pwd) {
+      let score = 0;
+      if (pwd.length >= 8) score++;
+      if (/[A-Z]/.test(pwd)) score++;
+      if (/[0-9]/.test(pwd)) score++;
+      if (/[^A-Za-z0-9]/.test(pwd)) score++;
+      return score;
+    }
+
+    pwdInput.addEventListener('input', () => {
+      const score = getStrength(pwdInput.value);
+      const labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+      const colors = ['', 'weak', 'medium', 'medium', 'strong'];
+      const textColors = ['', '#ef4444', '#f59e0b', '#f59e0b', '#22c55e'];
+
+      strengthBars.forEach((bar, i) => {
+        bar.className = 'strength-bar ' + (i < score ? colors[score] : '');
+      });
+
+      strengthLabel.textContent = pwdInput.value ? labels[score] : '';
+      strengthLabel.style.color = textColors[score];
+    });
+
+    // ── ERROR ──
+    function showError(msg) {
+      const div = document.getElementById('regError');
+      document.getElementById('regErrorText').textContent = msg;
+      div.classList.add('visible');
+      gsap.from(div, { y: -10, opacity: 0, duration: 0.4 });
+    }
+
+    // ── FORM SUBMIT ──
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      document.getElementById('regError').classList.remove('visible');
+
+      const firstName = document.getElementById('firstNameInput').value.trim();
+      const lastName = document.getElementById('lastNameInput').value.trim();
+      const email = document.getElementById('emailRegInput').value.trim();
+      const phone = document.getElementById('phoneInput').value.trim();
+      const password = document.getElementById('pwdRegInput').value;
+      const membership = document.getElementById('membershipPref').value;
+      const terms = document.getElementById('termsCheck').checked;
+
+      if (!firstName || !lastName) { showError('Please enter your full name.'); return; }
+      if (!email) { showError('Please enter your email address.'); return; }
+      if (!password || password.length < 8) { showError('Password must be at least 8 characters.'); return; }
+      if (!terms) { showError('Please accept the Terms of Service to continue.'); return; }
+
+      const btn = document.getElementById('regSubmitBtn');
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>&nbsp; Creating your account...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('http://localhost:5001/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ firstName, lastName, email, phone, password, membership })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.token) {
+          localStorage.setItem('skyluxe_token', data.token);
+          localStorage.setItem('skyluxe_user', JSON.stringify(data.user));
+          gsap.to('.auth-panel', { x: 60, opacity: 0, duration: 0.5, onComplete: () => { window.location.href = '/dashboard'; }});
+        } else {
+          showError(data.message || 'Registration failed. Please try again.');
+          btn.innerHTML = '<i class="fas fa-user-plus"></i>&nbsp; Create My Account';
+          btn.disabled = false;
+        }
+      } catch {
+        // Demo mode
+        localStorage.setItem('skyluxe_token', 'demo_' + Date.now());
+        localStorage.setItem('skyluxe_user', JSON.stringify({
+          name: firstName + ' ' + lastName, email, tier: membership.charAt(0).toUpperCase() + membership.slice(1)
+        }));
+        gsap.to('.auth-panel', { x: 60, opacity: 0, duration: 0.5, onComplete: () => { window.location.href = '/dashboard'; }});
+      }
+    });
+
+    // ── NAV TRANSITIONS ──
+    document.querySelectorAll('a[href^="/"]').forEach(link => {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        const href = this.getAttribute('href');
+        gsap.to('body', { opacity: 0, duration: 0.35, onComplete: () => { window.location.href = href; }});
+      });
+    });
+
+    gsap.from('body', { opacity: 0, duration: 0.4 });
+  </script>
+</body>
+</html>

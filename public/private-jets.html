@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Private Jet Charter — SkyLuxe</title>
+  <meta name="description" content="Charter the world's finest private jets — Gulfstream G700, Bombardier Global 7500, and more. Instant quotes, verified fleet, 24/7 concierge.">
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/lenis@1.1.13/dist/lenis.css">
+  <style>
+    /* ── JETS PAGE SPECIFIC ── */
+    .jets-hero {
+      min-height: 70vh;
+      position: relative;
+      display: flex;
+      align-items: center;
+      padding-top: 6rem;
+      overflow: hidden;
+    }
+
+    .jets-hero-bg {
+      position: absolute;
+      inset: 0;
+    }
+
+    .jets-hero-bg img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      animation: heroZoom 18s ease-in-out infinite alternate;
+    }
+
+    @keyframes heroZoom {
+      from { transform: scale(1); }
+      to { transform: scale(1.05); }
+    }
+
+    .jets-hero-bg::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(to right, rgba(3,3,5,0.92) 0%, rgba(3,3,5,0.5) 70%),
+        linear-gradient(to bottom, transparent, rgba(3,3,5,0.8));
+    }
+
+    /* Filter Bar */
+    .filter-bar {
+      background: var(--abyss);
+      border-bottom: 1px solid var(--border);
+      padding: 1.25rem 0;
+      position: sticky;
+      top: 70px;
+      z-index: 100;
+    }
+
+    .filter-bar-inner {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 1.1rem;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      font-family: var(--font-body);
+      white-space: nowrap;
+    }
+
+    .filter-chip:hover {
+      border-color: rgba(255,255,255,0.2);
+      color: var(--text-primary);
+    }
+
+    .filter-chip.active {
+      background: var(--gold-dim);
+      border-color: var(--border-gold);
+      color: var(--gold);
+    }
+
+    .filter-divider {
+      width: 1px;
+      height: 20px;
+      background: var(--border);
+    }
+
+    /* Jet Detail Modal */
+    .jet-modal-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-top: 1.5rem;
+    }
+
+    .jet-modal-specs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .jet-modal-spec {
+      background: rgba(255,255,255,0.04);
+      border: var(--glass-border);
+      border-radius: var(--radius-md);
+      padding: 0.9rem;
+    }
+
+    .jet-modal-spec-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .jet-modal-spec-value {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    /* Quote Form */
+    .quote-sidebar {
+      position: sticky;
+      top: 140px;
+    }
+
+    .quote-card {
+      background: var(--glass-bg-light);
+      border: 1px solid rgba(212,175,55,0.2);
+      border-radius: var(--radius-xl);
+      padding: 2rem;
+    }
+
+    .quote-card-title {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Fleet Grid Extended */
+    .fleet-full-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+
+    .amenities-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin: 1rem 0;
+    }
+
+    .amenity-tag {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      background: rgba(255,255,255,0.04);
+      border: var(--glass-border);
+      border-radius: var(--radius-pill);
+      padding: 0.3rem 0.7rem;
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+    }
+
+    .amenity-tag i { color: var(--gold); font-size: 0.65rem; }
+
+    /* Category hero banners */
+    .category-section-label {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .category-section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    @media (max-width: 900px) {
+      .fleet-full-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="cursor-dot" id="cursorDot"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+  <div class="noise-overlay"></div>
+
+  <!-- NAV -->
+  <nav class="skyluxe-nav" id="mainNav">
+    <a href="/" class="nav-logo" id="navLogo">
+      <div class="nav-logo-mark">SL</div>
+      <span class="nav-logo-text">Sky<span>Luxe</span></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/" class="nav-link" id="navHome">Home</a></li>
+      <li><a href="/private-jets" class="nav-link active" id="navJets">Private Jets</a></li>
+      <li><a href="/flights" class="nav-link" id="navFlights">Flights</a></li>
+      <li><a href="/concierge" class="nav-link" id="navConcierge">Concierge</a></li>
+      <li><a href="/membership" class="nav-link" id="navMembership">Membership</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="/login" class="nav-btn-ghost" id="navSignIn">Sign In</a>
+      <a href="/register" class="nav-btn-gold" id="navRegister"><i class="fas fa-crown" style="font-size:0.75rem;"></i>&nbsp; Join Elite</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="jets-hero" id="jetsHero">
+    <div class="jets-hero-bg">
+      <img src="/images/hero-private-jet.jpg" alt="Private jet at sunset" loading="eager">
+    </div>
+    <div class="hero-content" style="padding-top:2rem;">
+      <div class="hero-eyebrow" data-anim="fade-in">
+        <i class="fas fa-circle" style="font-size:0.4rem; color:#4ade80;"></i>
+        340+ Aircraft Available Now
+      </div>
+      <h1 class="hero-title" data-anim="fade-up">
+        Private Jet<br>
+        <span class="gold-line">Charter.</span>
+      </h1>
+      <p class="hero-subtitle" data-anim="fade-up">
+        Browse our curated fleet of ultra-long-range jets, heavy jets, and super midsize aircraft. Instant quotes, door-to-door service.
+      </p>
+      <div class="hero-actions" data-anim="fade-up">
+        <a href="#fleet" class="btn btn-primary btn-xl" id="browseFleetBtn">
+          <i class="fas fa-plane"></i> Browse Fleet
+        </a>
+        <a href="#instant-quote" class="btn btn-secondary btn-xl" id="getQuoteBtn">
+          <i class="fas fa-file-invoice-dollar"></i> Get Instant Quote
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FILTER BAR -->
+  <div class="filter-bar" id="filterBar">
+    <div class="container">
+      <div class="filter-bar-inner">
+        <button class="filter-chip active" data-category="all" id="filterAll">All Aircraft</button>
+        <button class="filter-chip" data-category="ultra-long" id="filterUltraLong"><i class="fas fa-earth-americas"></i> Ultra Long Range</button>
+        <button class="filter-chip" data-category="long-range" id="filterLong"><i class="fas fa-globe"></i> Long Range</button>
+        <button class="filter-chip" data-category="super-mid" id="filterSuperMid"><i class="fas fa-plane-departure"></i> Super Midsize</button>
+        <button class="filter-chip" data-category="midsize" id="filterMid"><i class="fas fa-plane"></i> Midsize</button>
+        <div class="filter-divider"></div>
+        <button class="filter-chip" data-sort="price-asc" id="sortPrice"><i class="fas fa-sort-amount-down-alt"></i> Price</button>
+        <button class="filter-chip" data-sort="range-desc" id="sortRange"><i class="fas fa-route"></i> Range</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLEET SECTION -->
+  <section id="fleet" style="padding: 5rem 0; background: var(--void);">
+    <div class="container">
+
+      <!-- Ultra Long Range -->
+      <div class="category-section-label" id="ultraLongSection">
+        <div class="section-label no-lines">Ultra Long Range</div>
+      </div>
+
+      <div class="fleet-full-grid" id="fleetGrid">
+        <!-- G700 -->
+        <div class="jet-card" data-category="ultra-long" data-price="320000" data-range="7500" id="jetCardG700">
+          <div class="jet-card-image">
+            <img src="/images/hero-private-jet.jpg" alt="Gulfstream G700" loading="lazy">
+            <div class="jet-tag">Ultra Long Range</div>
+          </div>
+          <div class="jet-card-body">
+            <div class="jet-name">Gulfstream G700</div>
+            <div class="jet-category">Ultra Long Range · 19 Passengers</div>
+            <div class="jet-specs">
+              <div class="jet-spec">
+                <div class="jet-spec-value">7,500 nm</div>
+                <div class="jet-spec-label">Range</div>
+              </div>
+              <div class="jet-spec">
+                <div class="jet-spec-value">Mach 0.925</div>
+                <div class="jet-spec-label">Speed</div>
+              </div>
+              <div class="jet-spec">
+                <div class="jet-spec-value">51,000 ft</div>
+                <div class="jet-spec-label">Ceiling</div>
+              </div>
+              <div class="jet-spec">
+                <div class="jet-spec-value">4 Living Zones</div>
+                <div class="jet-spec-label">Cabin Layout</div>
+              </div>
+            </div>
+            <div class="amenities-row">
+              <div class="amenity-tag"><i class="fas fa-wifi"></i> High-Speed WiFi</div>
+              <div class="amenity-tag"><i class="fas fa-bed"></i> Full Bed</div>
+              <div class="amenity-tag"><i class="fas fa-utensils"></i> Galley Kitchen</div>
+              <div class="amenity-tag"><i class="fas fa-bath"></i> Shower</div>
+            </div>
+            <div class="jet-price-row">
+              <div class="jet-price">₹3,20,000<span>per hour · approx</span></div>
+              <button class="btn btn-primary" style="padding:0.6rem 1.4rem; font-size:0.85rem;" onclick="openBookingModal('G700', '₹3,20,000')" id="bookG700CardBtn">Charter</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Global 7500 -->
+        <div class="jet-card" data-category="ultra-long" data-price="290000" data-range="7700" id="jetCardGlobal">
+          <div class="jet-card-image">
+            <img src="/images/hero-private-jet.jpg" alt="Bombardier Global 7500" loading="lazy">
+            <div class="jet-tag">Ultra Long Range</div>
+          </div>
+          <div class="jet-card-body">
+            <div class="jet-name">Global 7500</div>
+            <div class="jet-category">Ultra Long Range · 19 Passengers</div>
+            <div class="jet-specs">
+              <div class="jet-spec">
+                <div class="jet-spec-value">7,700 nm</div>
+                <div class="jet-spec-label">Range</div>
+              </div>
+              <div class="jet-spec">
+                <div class="jet-spec-value">Mach 0.925</div>
+                <div class="jet-spec-label">Speed</div>
+              </div>
+              <div class="jet-spec">
+                <div class="jet-spec-value">51,000 ft</div>
+                <div class="jet-spec-label">Ceiling</div>
+              </div>
+              <div class="jet-spec">
+                <div class="jet-spec-value">4 Living Zones</div>
+                <div class="jet-spec-label">Cabin Layout</div>
+              </div>
+            </div>
+            <div class="amenities-row">
+              <div class="amenity-tag"><i class="fas fa-wifi"></i> High-Speed WiFi</div>
+              <div class="amenity-tag"><i class="fas fa-bed"></i> Master Suite</div>
+              <div class="amenity-tag"><i class="fas fa-utensils"></i> Full Kitchen</div>
+              <div class="amenity-tag"><i class="fas fa-bath"></i> Ensuite Bath</div>
+            </div>
+            <div class="jet-price-row">
+              <div class="jet-price">₹2,90,000<span>per hour · approx</span></div>
+              <button class="btn btn-primary" style="padding:0.6rem 1.4rem; font-size:0.85rem;" onclick="openBookingModal('Global 7500', '₹2,90,000')" id="bookGlobalCardBtn">Charter</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Falcon 10X -->
+        <div class="jet-card" data-category="ultra-long" data-price="310000" data-range="7500" id="jetCardFalcon">
+          <div class="jet-card-image">
+            <img src="/images/hero-private-jet.jpg" alt="Dassault Falcon 10X" loading="lazy">
+            <div class="jet-tag">Ultra Long Range</div>
+          </div>
+          <div class="jet-card-body">
+            <div class="jet-name">Falcon 10X</div>
+            <div class="jet-category">Ultra Long Range · 16 Passengers</div>
+            <div class="jet-specs">
+              <div class="jet-spec">
+                <div class="jet-spec-value">7,500 nm</div>
+                <div class="jet-spec-label">Range</div>
+              </div>
+              <div class="jet-spec">
+                <div class="jet-spec-value">Mach 0.925</div>
+                <div class="jet-spec-label">Speed</div>
+              </div>
+              <div class="jet-spec">
+                <div class="jet-spec-value">51,000 ft</div>
+                <div class="jet-spec-label">Ceiling</div>
+              </div>
+              <div class="jet-spec">
+                <div class="jet-spec-value">3 Living Zones</div>
+                <div class="jet-spec-label">Cabin Layout</div>
+              </div>
+            </div>
+            <div class="amenities-row">
+              <div class="amenity-tag"><i class="fas fa-wifi"></i> Satcom WiFi</div>
+              <div class="amenity-tag"><i class="fas fa-bed"></i> Private Suite</div>
+              <div class="amenity-tag"><i class="fas fa-glass-martini"></i> Bar</div>
+              <div class="amenity-tag"><i class="fas fa-tv"></i> 4K Entertainment</div>
+            </div>
+            <div class="jet-price-row">
+              <div class="jet-price">₹3,10,000<span>per hour · approx</span></div>
+              <button class="btn btn-primary" style="padding:0.6rem 1.4rem; font-size:0.85rem;" onclick="openBookingModal('Falcon 10X', '₹3,10,000')" id="bookFalconBtn">Charter</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Super Midsize Section -->
+        <div class="jet-card" data-category="super-mid" data-price="180000" data-range="4000" id="jetCardCitationL">
+          <div class="jet-card-image">
+            <img src="/images/hero-private-jet.jpg" alt="Citation Longitude" loading="lazy">
+            <div class="jet-tag">Super Midsize</div>
+          </div>
+          <div class="jet-card-body">
+            <div class="jet-name">Citation Longitude</div>
+            <div class="jet-category">Super Midsize · 12 Passengers</div>
+            <div class="jet-specs">
+              <div class="jet-spec">
+                <div class="jet-spec-value">4,000 nm</div>
+                <div class="jet-spec-label">Range</div>
+              </div>
+              <div class="jet-spec">
+                <div class="jet-spec-value">Mach 0.84</div>
+                <div class="jet-spec-label">Speed</div>
+              </div>
+              <div class="jet-spec">
+                <div class="jet-spec-value">45,000 ft</div>
+                <div class="jet-spec-label">Ceiling</div>
+              </div>
+              <div class="jet-spec">
+                <div class="jet-spec-value">2 Zones</div>
+                <div class="jet-spec-label">Cabin Layout</div>
+              </div>
+            </div>
+            <div class="amenities-row">
+              <div class="amenity-tag"><i class="fas fa-wifi"></i> WiFi</div>
+              <div class="amenity-tag"><i class="fas fa-chair"></i> Club Seating</div>
+              <div class="amenity-tag"><i class="fas fa-utensils"></i> Galley</div>
+            </div>
+            <div class="jet-price-row">
+              <div class="jet-price">₹1,80,000<span>per hour · approx</span></div>
+              <button class="btn btn-primary" style="padding:0.6rem 1.4rem; font-size:0.85rem;" onclick="openBookingModal('Citation Longitude', '₹1,80,000')" id="bookCitationLBtn">Charter</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Challenger 350 -->
+        <div class="jet-card" data-category="super-mid" data-price="155000" data-range="3400" id="jetCardChallenger">
+          <div class="jet-card-image">
+            <img src="/images/hero-private-jet.jpg" alt="Bombardier Challenger 350" loading="lazy">
+            <div class="jet-tag">Super Midsize</div>
+          </div>
+          <div class="jet-card-body">
+            <div class="jet-name">Challenger 350</div>
+            <div class="jet-category">Super Midsize · 10 Passengers</div>
+            <div class="jet-specs">
+              <div class="jet-spec">
+                <div class="jet-spec-value">3,400 nm</div>
+                <div class="jet-spec-label">Range</div>
+              </div>
+              <div class="jet-spec">
+                <div class="jet-spec-value">Mach 0.82</div>
+                <div class="jet-spec-label">Speed</div>
+              </div>
+              <div class="jet-spec">
+                <div class="jet-spec-value">45,000 ft</div>
+                <div class="jet-spec-label">Ceiling</div>
+              </div>
+              <div class="jet-spec">
+                <div class="jet-spec-value">2 Zones</div>
+                <div class="jet-spec-label">Cabin Layout</div>
+              </div>
+            </div>
+            <div class="amenities-row">
+              <div class="amenity-tag"><i class="fas fa-wifi"></i> WiFi</div>
+              <div class="amenity-tag"><i class="fas fa-chair"></i> Flat Seats</div>
+              <div class="amenity-tag"><i class="fas fa-utensils"></i> Galley</div>
+            </div>
+            <div class="jet-price-row">
+              <div class="jet-price">₹1,55,000<span>per hour · approx</span></div>
+              <button class="btn btn-primary" style="padding:0.6rem 1.4rem; font-size:0.85rem;" onclick="openBookingModal('Challenger 350', '₹1,55,000')" id="bookChallengerBtn">Charter</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Phenom 300E -->
+        <div class="jet-card" data-category="midsize" data-price="80000" data-range="2010" id="jetCardPhenom">
+          <div class="jet-card-image">
+            <img src="/images/hero-private-jet.jpg" alt="Embraer Phenom 300E" loading="lazy">
+            <div class="jet-tag">Light Jet</div>
+          </div>
+          <div class="jet-card-body">
+            <div class="jet-name">Phenom 300E</div>
+            <div class="jet-category">Light Jet · 8 Passengers</div>
+            <div class="jet-specs">
+              <div class="jet-spec">
+                <div class="jet-spec-value">2,010 nm</div>
+                <div class="jet-spec-label">Range</div>
+              </div>
+              <div class="jet-spec">
+                <div class="jet-spec-value">Mach 0.80</div>
+                <div class="jet-spec-label">Speed</div>
+              </div>
+              <div class="jet-spec">
+                <div class="jet-spec-value">45,000 ft</div>
+                <div class="jet-spec-label">Ceiling</div>
+              </div>
+              <div class="jet-spec">
+                <div class="jet-spec-value">1 Zone</div>
+                <div class="jet-spec-label">Cabin Layout</div>
+              </div>
+            </div>
+            <div class="amenities-row">
+              <div class="amenity-tag"><i class="fas fa-wifi"></i> WiFi</div>
+              <div class="amenity-tag"><i class="fas fa-chair"></i> Executive Seats</div>
+            </div>
+            <div class="jet-price-row">
+              <div class="jet-price">₹80,000<span>per hour · approx</span></div>
+              <button class="btn btn-primary" style="padding:0.6rem 1.4rem; font-size:0.85rem;" onclick="openBookingModal('Phenom 300E', '₹80,000')" id="bookPhenomBtn">Charter</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INSTANT QUOTE SECTION -->
+  <section id="instant-quote" style="padding:6rem 0; background:var(--abyss);">
+    <div class="container">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:start;" class="quote-layout">
+        <div data-anim="fade-up">
+          <div class="section-label no-lines">Get Your Quote</div>
+          <h2 class="section-title" style="margin-top:0.75rem;">Instant Charter Quote</h2>
+          <p class="section-subtitle" style="margin-top:1rem;">
+            Fill in your trip details and receive a personalized quote from our team within 15 minutes.
+          </p>
+
+          <div style="margin-top:2.5rem;" class="quote-features">
+            <div style="display:flex; align-items:center; gap:0.75rem; padding:1rem 0; border-bottom:1px solid var(--border);">
+              <div style="width:36px;height:36px;background:var(--gold-dim);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--gold);flex-shrink:0;"><i class="fas fa-clock"></i></div>
+              <div><div style="font-weight:600; font-size:0.9rem;">15-Minute Response</div><div style="font-size:0.8rem;color:var(--text-muted);">Our team responds within 15 minutes, 24/7</div></div>
+            </div>
+            <div style="display:flex; align-items:center; gap:0.75rem; padding:1rem 0; border-bottom:1px solid var(--border);">
+              <div style="width:36px;height:36px;background:var(--gold-dim);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--gold);flex-shrink:0;"><i class="fas fa-lock"></i></div>
+              <div><div style="font-weight:600; font-size:0.9rem;">Price Guarantee</div><div style="font-size:0.8rem;color:var(--text-muted);">No hidden fees — the quoted price is what you pay</div></div>
+            </div>
+            <div style="display:flex; align-items:center; gap:0.75rem; padding:1rem 0;">
+              <div style="width:36px;height:36px;background:var(--gold-dim);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--gold);flex-shrink:0;"><i class="fas fa-headset"></i></div>
+              <div><div style="font-weight:600; font-size:0.9rem;">Dedicated Advisor</div><div style="font-size:0.8rem;color:var(--text-muted);">One personal aviation advisor for your entire journey</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="quote-sidebar" data-anim="fade-up">
+          <div class="quote-card" id="quoteFormCard">
+            <div class="quote-card-title">Request a Charter Quote</div>
+            <form id="quoteForm">
+              <div class="form-group">
+                <label class="form-label" for="quoteFrom">Departure Airport / City</label>
+                <input class="form-control" type="text" id="quoteFrom" placeholder="e.g., Mumbai (BOM)">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="quoteTo">Destination Airport / City</label>
+                <input class="form-control" type="text" id="quoteTo" placeholder="e.g., Dubai (DXB)">
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                <div class="form-group">
+                  <label class="form-label" for="quoteDept">Departure Date</label>
+                  <input class="form-control" type="date" id="quoteDept">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="quotePax">Passengers</label>
+                  <select class="form-control" id="quotePax">
+                    <option>1-4</option>
+                    <option>5-9</option>
+                    <option>10-16</option>
+                    <option>17-19</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="quoteJetCat">Aircraft Category</label>
+                <select class="form-control" id="quoteJetCat">
+                  <option>Any (Best Match)</option>
+                  <option>Light Jet</option>
+                  <option>Super Midsize</option>
+                  <option>Heavy Jet</option>
+                  <option>Ultra Long Range</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="quoteName">Your Name</label>
+                <input class="form-control" type="text" id="quoteName" placeholder="Full name">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="quoteEmail">Email / Phone</label>
+                <input class="form-control" type="email" id="quoteEmail" placeholder="your@email.com">
+              </div>
+              <button type="submit" class="btn btn-primary w-full" id="quoteSubmitBtn" style="padding:1rem; border-radius:12px; justify-content:center; margin-top:0.5rem;">
+                <i class="fas fa-paper-plane"></i>&nbsp; Request Quote
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BOOKING MODAL -->
+  <div class="modal-overlay" id="bookingModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal">
+      <button class="modal-close" id="modalCloseBtn" aria-label="Close"><i class="fas fa-xmark"></i></button>
+      <div class="section-label no-lines" style="margin-bottom:0.5rem;">Charter Booking</div>
+      <h2 class="section-title" id="modalTitle" style="font-size:1.5rem; margin-bottom:0.25rem;">Gulfstream G700</h2>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:2rem;">Starting from <strong id="modalPrice" style="color:var(--gold);">₹3,20,000</strong>/hr</p>
+      <form id="bookingForm">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+          <div class="form-group">
+            <label class="form-label" for="bkFrom">From</label>
+            <input class="form-control" type="text" id="bkFrom" placeholder="Departure city">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="bkTo">To</label>
+            <input class="form-control" type="text" id="bkTo" placeholder="Destination city">
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+          <div class="form-group">
+            <label class="form-label" for="bkDate">Date</label>
+            <input class="form-control" type="date" id="bkDate">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="bkPax">Passengers</label>
+            <input class="form-control" type="number" id="bkPax" min="1" max="19" value="4">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="bkEmail">Your Email</label>
+          <input class="form-control" type="email" id="bkEmail" placeholder="you@example.com">
+        </div>
+        <div style="display:flex; gap:0.75rem; margin-top:0.75rem;">
+          <button type="submit" class="btn btn-primary" style="flex:1; padding:0.9rem; border-radius:12px; justify-content:center;" id="bkSubmitBtn">
+            <i class="fas fa-check"></i> Confirm Charter
+          </button>
+          <button type="button" class="btn btn-secondary" id="bkCancelBtn" style="padding:0.9rem 1.5rem;">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast-container" id="toastContainer" role="alert" aria-live="polite"></div>
+
+  <!-- FOOTER -->
+  <footer class="skyluxe-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="/" class="nav-logo" style="margin-bottom:0.5rem;">
+            <div class="nav-logo-mark">SL</div>
+            <span class="nav-logo-text">Sky<span>Luxe</span></span>
+          </a>
+          <p class="footer-tagline">The world's most exclusive aviation platform for private jet charters and luxury travel.</p>
+          <div class="footer-social">
+            <a href="#" class="footer-social-btn"><i class="fab fa-instagram"></i></a>
+            <a href="#" class="footer-social-btn"><i class="fab fa-x-twitter"></i></a>
+            <a href="#" class="footer-social-btn"><i class="fab fa-linkedin-in"></i></a>
+          </div>
+        </div>
+        <div>
+          <div class="footer-col-title">Aircraft</div>
+          <ul class="footer-links">
+            <li><a href="#fleet">Ultra Long Range</a></li>
+            <li><a href="#fleet">Heavy Jets</a></li>
+            <li><a href="#fleet">Super Midsize</a></li>
+            <li><a href="#fleet">Light Jets</a></li>
+          </ul>
+        </div>
+        <div>
+          <div class="footer-col-title">Services</div>
+          <ul class="footer-links">
+            <li><a href="/concierge">AI Concierge</a></li>
+            <li><a href="/membership">Memberships</a></li>
+            <li><a href="/flights">Commercial Flights</a></li>
+          </ul>
+        </div>
+        <div>
+          <div class="footer-col-title">Contact</div>
+          <ul class="footer-links">
+            <li><a href="tel:+18005795893"><i class="fas fa-phone" style="color:var(--gold); font-size:0.7rem;"></i> +1 800 SKYLUXE</a></li>
+            <li><a href="mailto:jets@skyluxe.com"><i class="fas fa-envelope" style="color:var(--gold); font-size:0.7rem;"></i> jets@skyluxe.com</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2025 SkyLuxe Aviation Ltd. All rights reserved.</p>
+        <div class="footer-bottom-links">
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    // ── CURSOR ──
+    const dot = document.getElementById('cursorDot');
+    const ring = document.getElementById('cursorRing');
+    let mx=0,my=0,rx=0,ry=0;
+    document.addEventListener('mousemove', e=>{mx=e.clientX;my=e.clientY;dot.style.left=mx+'px';dot.style.top=my+'px';});
+    (function ar(){rx+=(mx-rx)*0.1;ry+=(my-ry)*0.1;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(ar);})();
+    document.querySelectorAll('a,button,.jet-card').forEach(el=>{
+      el.addEventListener('mouseenter',()=>document.body.classList.add('cursor-hover'));
+      el.addEventListener('mouseleave',()=>document.body.classList.remove('cursor-hover'));
+    });
+
+    // ── LENIS ──
+    const lenis = new Lenis({ duration:1.3, easing:t=>Math.min(1,1.001-Math.pow(2,-10*t)) });
+    function raf(t){lenis.raf(t);requestAnimationFrame(raf);}
+    requestAnimationFrame(raf);
+
+    // ── NAV SCROLL ──
+    const nav = document.getElementById('mainNav');
+    window.addEventListener('scroll', ()=>nav.classList.toggle('scrolled', window.scrollY>60));
+
+    // ── GSAP ANIMATIONS ──
+    gsap.registerPlugin(ScrollTrigger);
+    gsap.from('.hero-eyebrow', {y:20, opacity:0, duration:0.8, ease:'power3.out'});
+    gsap.from('.hero-title', {y:40, opacity:0, duration:1.1, delay:0.15, ease:'power4.out'});
+    gsap.from('.hero-subtitle', {y:30, opacity:0, duration:0.9, delay:0.3, ease:'power3.out'});
+    gsap.from('.hero-actions', {y:20, opacity:0, duration:0.8, delay:0.45, ease:'power3.out'});
+
+    gsap.from('.jet-card', {
+      scrollTrigger:{trigger:'#fleetGrid', start:'top 80%'},
+      y:70, opacity:0, duration:0.9, stagger:0.15, ease:'power4.out'
+    });
+
+    gsap.utils.toArray('[data-anim="fade-up"]').forEach(el=>{
+      gsap.from(el,{scrollTrigger:{trigger:el,start:'top 85%'},y:50,opacity:0,duration:0.9,ease:'power3.out'});
+    });
+
+    // ── FILTER CHIPS ──
+    const filterChips = document.querySelectorAll('.filter-chip[data-category]');
+    filterChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        filterChips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        const cat = chip.dataset.category;
+        document.querySelectorAll('.jet-card').forEach(card => {
+          if (cat === 'all' || card.dataset.category === cat) {
+            gsap.to(card, { opacity:1, scale:1, duration:0.3 });
+            card.style.display = 'block';
+          } else {
+            gsap.to(card, { opacity:0, scale:0.95, duration:0.2, onComplete:()=>{ card.style.display='none'; }});
+          }
+        });
+      });
+    });
+
+    // ── BOOKING MODAL ──
+    function openBookingModal(name, price) {
+      document.getElementById('modalTitle').textContent = name;
+      document.getElementById('modalPrice').textContent = price;
+      const modal = document.getElementById('bookingModal');
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+      lenis.stop();
+    }
+
+    document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+    document.getElementById('bkCancelBtn').addEventListener('click', closeModal);
+    document.getElementById('bookingModal').addEventListener('click', (e)=>{
+      if(e.target===e.currentTarget) closeModal();
+    });
+
+    function closeModal() {
+      document.getElementById('bookingModal').classList.remove('active');
+      document.body.style.overflow = '';
+      lenis.start();
+    }
+
+    // ── BOOKING FORM ──
+    document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('bkSubmitBtn');
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+      btn.disabled = true;
+
+      const bookingData = {
+        jet: document.getElementById('modalTitle').textContent,
+        from: document.getElementById('bkFrom').value,
+        to: document.getElementById('bkTo').value,
+        date: document.getElementById('bkDate').value,
+        passengers: document.getElementById('bkPax').value,
+        email: document.getElementById('bkEmail').value
+      };
+
+      try {
+        const res = await fetch('http://localhost:5001/api/booking', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({
+            flightId: bookingData.jet,
+            passengers: [{email:bookingData.email}],
+            totalPrice: 320000,
+            class: 'private'
+          })
+        });
+        const data = await res.json();
+        closeModal();
+        showToast('Charter Confirmed!', `Booking ID: ${data.booking_id || 'LUX' + Date.now()}`, 'success');
+      } catch {
+        // Demo mode
+        const id = 'LUX' + Date.now();
+        closeModal();
+        showToast('Charter Requested!', `Your booking ID: ${id}. Our team will contact you shortly.`, 'success');
+      }
+
+      btn.innerHTML = '<i class="fas fa-check"></i> Confirm Charter';
+      btn.disabled = false;
+    });
+
+    // ── QUOTE FORM ──
+    document.getElementById('quoteForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('quoteSubmitBtn');
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+      btn.disabled = true;
+
+      await new Promise(r => setTimeout(r, 1200));
+      showToast('Quote Request Received!', 'Our aviation team will contact you within 15 minutes.', 'success');
+      e.target.reset();
+      btn.innerHTML = '<i class="fas fa-paper-plane"></i>&nbsp; Request Quote';
+      btn.disabled = false;
+    });
+
+    // ── TOAST ──
+    function showToast(title, msg, type='info') {
+      const c = document.getElementById('toastContainer');
+      const icon = type==='success'?'fa-circle-check':type==='error'?'fa-circle-xmark':'fa-circle-info';
+      const t = document.createElement('div');
+      t.className = `toast ${type}`;
+      t.innerHTML = `<i class="fas ${icon} toast-icon"></i><div><div class="toast-title">${title}</div><div class="toast-message">${msg}</div></div>`;
+      c.appendChild(t);
+      setTimeout(()=>{ t.style.transition='all 0.4s ease'; t.style.opacity='0'; t.style.transform='translateX(110%)'; setTimeout(()=>t.remove(),400); }, 3500);
+    }
+
+    // ── SET MIN DATE ──
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('quoteDept').min = today;
+    document.getElementById('bkDate').min = today;
+
+    // ── PAGE TRANSITIONS ──
+    document.querySelectorAll('a[href^="/"]').forEach(link=>{
+      link.addEventListener('click',function(e){
+        e.preventDefault();
+        gsap.to('body',{opacity:0,duration:0.35,onComplete:()=>{window.location.href=this.getAttribute('href');}});
+      });
+    });
+    gsap.from('body',{opacity:0,duration:0.4});
+  </script>
+</body>
+</html>

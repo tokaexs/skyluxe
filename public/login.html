@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — SkyLuxe</title>
+  <meta name="description" content="Sign in to your SkyLuxe account to access premium bookings, AI concierge, and exclusive member benefits.">
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    html, body { height: 100%; overflow: hidden; }
+
+    .auth-page {
+      height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .auth-visual {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .auth-visual img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      object-position: center;
+      animation: authZoom 20s ease-in-out infinite alternate;
+    }
+
+    @keyframes authZoom {
+      from { transform: scale(1); }
+      to { transform: scale(1.08); }
+    }
+
+    .auth-visual-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(3,3,5,0.5) 0%, rgba(3,3,5,0.2) 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 3rem;
+    }
+
+    .auth-visual-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(3,3,5,0.75);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(212,175,55,0.25);
+      border-radius: 999px;
+      padding: 0.4rem 1rem;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 1rem;
+    }
+
+    .auth-visual-quote {
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      font-weight: 700;
+      line-height: 1.3;
+      color: #fff;
+      margin-bottom: 1rem;
+    }
+
+    .auth-visual-attr {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.55);
+    }
+
+    .auth-panel {
+      background: var(--obsidian);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 3rem 4rem;
+      position: relative;
+    }
+
+    .auth-panel::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--gold-gradient);
+    }
+
+    .auth-back {
+      position: absolute;
+      top: 2rem; left: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color var(--transition-fast);
+    }
+
+    .auth-back:hover { color: var(--text-primary); }
+
+    .input-with-icon {
+      position: relative;
+    }
+
+    .input-with-icon .field-icon {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      pointer-events: none;
+      transition: color var(--transition-fast);
+    }
+
+    .input-with-icon .form-control {
+      padding-left: 2.75rem;
+    }
+
+    .input-with-icon .form-control:focus + .field-icon,
+    .input-with-icon:focus-within .field-icon {
+      color: var(--gold);
+    }
+
+    .input-with-icon.password-wrapper .toggle-password {
+      position: absolute;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: color var(--transition-fast);
+    }
+    .input-with-icon.password-wrapper .toggle-password:hover { color: var(--gold); }
+
+    .remember-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.25rem;
+    }
+
+    .remember-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .remember-label input[type="checkbox"] {
+      accent-color: var(--gold);
+      width: 14px;
+      height: 14px;
+    }
+
+    .forgot-link {
+      font-size: 0.875rem;
+      color: var(--gold);
+      text-decoration: none;
+    }
+
+    .forgot-link:hover { text-decoration: underline; }
+
+    .error-message {
+      display: none;
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.25);
+      border-radius: var(--radius-md);
+      padding: 0.75rem 1rem;
+      font-size: 0.85rem;
+      color: #f87171;
+      margin-bottom: 1.25rem;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .error-message.visible { display: flex; }
+
+    @media (max-width: 900px) {
+      html, body { overflow: auto; }
+      .auth-page { grid-template-columns: 1fr; height: auto; min-height: 100vh; }
+      .auth-visual { display: none; }
+      .auth-panel { padding: 4rem 2rem 3rem; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Cursor -->
+  <div class="cursor-dot" id="cursorDot"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <div class="auth-page">
+    <!-- Visual Side -->
+    <div class="auth-visual">
+      <img src="/images/hero-jet-interior.jpg" alt="Luxury private jet interior at golden hour" loading="eager">
+      <div class="auth-visual-overlay">
+        <div class="auth-visual-badge"><i class="fas fa-shield-halved"></i> 256-bit Encrypted</div>
+        <div class="auth-visual-quote">"True luxury is not about what you own — it's about where you can go."</div>
+        <div class="auth-visual-attr">— SkyLuxe Philosophy</div>
+      </div>
+    </div>
+
+    <!-- Auth Panel -->
+    <div class="auth-panel">
+      <a href="/" class="auth-back" id="backHomeLink">
+        <i class="fas fa-arrow-left"></i> Back to SkyLuxe
+      </a>
+
+      <div style="margin-bottom:2.5rem;">
+        <a href="/" class="nav-logo" id="authLogoLink" style="margin-bottom:2rem; display:inline-flex;">
+          <div class="nav-logo-mark">SL</div>
+          <span class="nav-logo-text">Sky<span>Luxe</span></span>
+        </a>
+        <h1 class="auth-title">Welcome back.</h1>
+        <p class="auth-subtitle">Sign in to access your exclusive member portal.</p>
+      </div>
+
+      <!-- Error Message -->
+      <div class="error-message" id="loginError">
+        <i class="fas fa-circle-xmark"></i>
+        <span id="loginErrorText">Invalid credentials. Please try again.</span>
+      </div>
+
+      <!-- Social Logins -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:1.25rem;">
+        <button class="social-btn" id="appleLoginBtn" type="button">
+          <i class="fab fa-apple"></i> Apple
+        </button>
+        <button class="social-btn" id="googleLoginBtn" type="button">
+          <i class="fab fa-google"></i> Google
+        </button>
+      </div>
+
+      <div class="auth-divider">or sign in with email</div>
+
+      <!-- Login Form -->
+      <form id="loginForm" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="emailInput">Email Address</label>
+          <div class="input-with-icon">
+            <i class="field-icon fas fa-envelope"></i>
+            <input class="form-control" type="email" id="emailInput" placeholder="you@example.com" autocomplete="email" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="passwordInput">Password</label>
+          <div class="input-with-icon password-wrapper">
+            <i class="field-icon fas fa-lock"></i>
+            <input class="form-control" type="password" id="passwordInput" placeholder="Your password" autocomplete="current-password" required>
+            <button class="toggle-password" type="button" id="togglePwdBtn" aria-label="Show password">
+              <i class="fas fa-eye" id="eyeIcon"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="remember-row" style="margin-bottom:1.75rem;">
+          <label class="remember-label">
+            <input type="checkbox" id="rememberMe"> Remember me for 30 days
+          </label>
+          <a href="/forgot-password" class="forgot-link">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full" id="loginSubmitBtn" style="padding:1rem; font-size:1rem; border-radius:12px; justify-content:center;">
+          <i class="fas fa-arrow-right-to-bracket"></i>&nbsp; Sign In Securely
+        </button>
+      </form>
+
+      <div class="auth-footer" style="margin-top:2rem;">
+        New to SkyLuxe? <a href="/register" id="goRegisterLink">Create your free account →</a>
+      </div>
+
+      <div style="margin-top:3rem; padding-top:2rem; border-top:1px solid var(--border);">
+        <div style="display:flex; justify-content:center; gap:2rem; flex-wrap:wrap;">
+          <a href="/privacy" style="font-size:0.75rem; color:var(--text-muted); text-decoration:none;">Privacy Policy</a>
+          <a href="/terms" style="font-size:0.75rem; color:var(--text-muted); text-decoration:none;">Terms of Service</a>
+          <a href="/security" style="font-size:0.75rem; color:var(--text-muted); text-decoration:none;">Security</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    // ── CURSOR ──
+    const dot = document.getElementById('cursorDot');
+    const ring = document.getElementById('cursorRing');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+    document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; dot.style.left = mx+'px'; dot.style.top = my+'px'; });
+    (function animRing() { rx += (mx-rx)*0.1; ry += (my-ry)*0.1; ring.style.left = rx+'px'; ring.style.top = ry+'px'; requestAnimationFrame(animRing); })();
+    document.querySelectorAll('a, button').forEach(el => {
+      el.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
+      el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-hover'));
+    });
+
+    // ── ANIMATIONS ──
+    gsap.from('.auth-panel > *', {
+      y: 20, opacity: 0, duration: 0.7, stagger: 0.08, ease: 'power3.out', delay: 0.2
+    });
+    gsap.from('.auth-visual img', {
+      scale: 1.12, duration: 1.5, ease: 'power3.out'
+    });
+
+    // ── TOGGLE PASSWORD ──
+    const toggleBtn = document.getElementById('togglePwdBtn');
+    const eyeIcon = document.getElementById('eyeIcon');
+    const pwdInput = document.getElementById('passwordInput');
+    toggleBtn.addEventListener('click', () => {
+      const isHidden = pwdInput.type === 'password';
+      pwdInput.type = isHidden ? 'text' : 'password';
+      eyeIcon.className = isHidden ? 'fas fa-eye-slash' : 'fas fa-eye';
+      toggleBtn.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+    });
+
+    // ── FORM VALIDATION & SUBMIT ──
+    const loginForm = document.getElementById('loginForm');
+    const submitBtn = document.getElementById('loginSubmitBtn');
+    const errorDiv = document.getElementById('loginError');
+    const errorText = document.getElementById('loginErrorText');
+
+    function showError(msg) {
+      errorText.textContent = msg;
+      errorDiv.classList.add('visible');
+      gsap.from(errorDiv, { y: -10, opacity: 0, duration: 0.4, ease: 'power2.out' });
+    }
+
+    function hideError() { errorDiv.classList.remove('visible'); }
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideError();
+
+      const email = document.getElementById('emailInput').value.trim();
+      const password = document.getElementById('passwordInput').value;
+
+      if (!email) { showError('Please enter your email address.'); return; }
+      if (!password) { showError('Please enter your password.'); return; }
+
+      // Loading state
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>&nbsp; Authenticating...';
+      submitBtn.disabled = true;
+
+      try {
+        const res = await fetch('http://localhost:5001/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.token) {
+          // Store auth token
+          localStorage.setItem('skyluxe_token', data.token);
+          localStorage.setItem('skyluxe_user', JSON.stringify(data.user));
+          if (document.getElementById('rememberMe').checked) {
+            localStorage.setItem('skyluxe_remember', email);
+          }
+
+          // Animate and redirect
+          gsap.to('.auth-panel', { x: 60, opacity: 0, duration: 0.5, ease: 'power2.inOut', onComplete: () => {
+            window.location.href = '/dashboard';
+          }});
+        } else {
+          showError(data.message || 'Invalid email or password. Please try again.');
+          submitBtn.innerHTML = '<i class="fas fa-arrow-right-to-bracket"></i>&nbsp; Sign In Securely';
+          submitBtn.disabled = false;
+        }
+      } catch (err) {
+        // Demo fallback (when backend is not running)
+        if (email && password.length >= 6) {
+          localStorage.setItem('skyluxe_token', 'demo_token_' + Date.now());
+          localStorage.setItem('skyluxe_user', JSON.stringify({ name: 'Elite Member', email, tier: 'Gold' }));
+          gsap.to('.auth-panel', { x: 60, opacity: 0, duration: 0.5, ease: 'power2.inOut', onComplete: () => {
+            window.location.href = '/dashboard';
+          }});
+        } else {
+          showError('Please enter valid credentials (password must be 6+ characters).');
+          submitBtn.innerHTML = '<i class="fas fa-arrow-right-to-bracket"></i>&nbsp; Sign In Securely';
+          submitBtn.disabled = false;
+        }
+      }
+    });
+
+    // ── REMEMBER ME ──
+    const remembered = localStorage.getItem('skyluxe_remember');
+    if (remembered) {
+      document.getElementById('emailInput').value = remembered;
+      document.getElementById('rememberMe').checked = true;
+    }
+
+    // ── SOCIAL AUTH PLACEHOLDERS ──
+    document.getElementById('appleLoginBtn').addEventListener('click', () => {
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>&nbsp; Connecting to Apple...';
+      setTimeout(() => {
+        submitBtn.innerHTML = '<i class="fas fa-arrow-right-to-bracket"></i>&nbsp; Sign In Securely';
+      }, 1500);
+    });
+
+    document.getElementById('googleLoginBtn').addEventListener('click', () => {
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>&nbsp; Connecting to Google...';
+      setTimeout(() => {
+        submitBtn.innerHTML = '<i class="fas fa-arrow-right-to-bracket"></i>&nbsp; Sign In Securely';
+      }, 1500);
+    });
+
+    // ── NAV TRANSITIONS ──
+    document.querySelectorAll('a[href^="/"]').forEach(link => {
+      link.addEventListener('click', function(e) {
+        const href = this.getAttribute('href');
+        e.preventDefault();
+        gsap.to('body', { opacity: 0, duration: 0.35, onComplete: () => { window.location.href = href; }});
+      });
+    });
+    gsap.from('body', { opacity: 0, duration: 0.4 });
+  </script>
+</body>
+</html>

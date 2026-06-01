@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Member Dashboard — SkyLuxe</title>
+  <meta name="description" content="Your SkyLuxe member dashboard — bookings, SkyCoins rewards, concierge requests, and exclusive benefits.">
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    html, body { height: 100%; overflow: hidden; }
+
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .dashboard-sidebar {
+      background: var(--abyss);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      padding: 1.5rem 1rem;
+      position: relative;
+    }
+
+    .dashboard-sidebar::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--gold-gradient);
+    }
+
+    .dashboard-main {
+      overflow-y: auto;
+      background: var(--void);
+      padding: 2.5rem;
+    }
+
+    /* Sidebar Items */
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      text-decoration: none;
+      padding: 0.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .sidebar-section-label {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 0 0.75rem;
+      margin: 1.25rem 0 0.4rem;
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.65rem 0.75rem;
+      border-radius: var(--radius-md);
+      text-decoration: none;
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all var(--transition-fast);
+      position: relative;
+      cursor: pointer;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      font-family: var(--font-body);
+    }
+
+    .sidebar-link:hover {
+      color: var(--text-primary);
+      background: rgba(255,255,255,0.05);
+    }
+
+    .sidebar-link.active {
+      color: var(--gold);
+      background: var(--gold-dim);
+    }
+
+    .sidebar-link.active::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 20%; bottom: 20%;
+      width: 2px;
+      background: var(--gold-gradient);
+      border-radius: 1px;
+    }
+
+    .sidebar-link i {
+      width: 18px;
+      text-align: center;
+      font-size: 0.875rem;
+      flex-shrink: 0;
+    }
+
+    .sidebar-badge {
+      margin-left: auto;
+      background: var(--gold-dim);
+      color: var(--gold);
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 0.1rem 0.5rem;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border-gold);
+    }
+
+    .sidebar-bottom {
+      margin-top: auto;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .user-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.03);
+      border: var(--glass-border);
+      text-decoration: none;
+    }
+
+    .user-avatar {
+      width: 38px; height: 38px;
+      background: var(--gold-gradient);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--void);
+      flex-shrink: 0;
+    }
+
+    .user-name { font-size: 0.875rem; font-weight: 600; line-height: 1.2; }
+    .user-tier { font-size: 0.7rem; color: var(--gold); }
+
+    /* Dashboard Content Panels */
+    .dashboard-panel {
+      display: none;
+    }
+
+    .dashboard-panel.active {
+      display: block;
+      animation: panelIn 0.4s ease forwards;
+    }
+
+    @keyframes panelIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Stats */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: var(--glass-bg-light);
+      border: var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--gold-gradient);
+      opacity: 0.4;
+    }
+
+    .stat-icon {
+      width: 36px; height: 36px;
+      background: var(--gold-dim);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gold);
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+    }
+
+    .stat-val {
+      font-family: var(--font-display);
+      font-size: 1.75rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-lbl {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    /* Rewards Card */
+    .rewards-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .rewards-card {
+      background: linear-gradient(135deg, rgba(212,175,55,0.1), rgba(8,8,16,0.9));
+      border: 1px solid rgba(212,175,55,0.2);
+      border-radius: var(--radius-xl);
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .rewards-card::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, rgba(212,175,55,0.15), transparent 70%);
+    }
+
+    .rewards-balance {
+      font-family: var(--font-display);
+      font-size: 2.5rem;
+      font-weight: 800;
+      background: var(--gold-text-gradient);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin: 0.5rem 0;
+    }
+
+    /* Bookings Table */
+    .bookings-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .bookings-table th {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      text-align: left;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .bookings-table td {
+      padding: 1rem;
+      font-size: 0.875rem;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .bookings-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+    .booking-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: var(--radius-pill);
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+
+    .status-confirmed { background: rgba(34,197,94,0.12); color: #4ade80; }
+    .status-pending { background: rgba(251,191,36,0.12); color: #fbbf24; }
+    .status-completed { background: rgba(148,163,184,0.12); color: #94a3b8; }
+
+    /* Quick Actions */
+    .quick-actions-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .quick-action {
+      background: var(--glass-bg-light);
+      border: var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.6rem;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      text-align: center;
+      text-decoration: none;
+    }
+
+    .quick-action:hover {
+      border-color: var(--border-gold);
+      background: var(--gold-dim);
+      transform: translateY(-3px);
+    }
+
+    .quick-action i {
+      font-size: 1.3rem;
+      color: var(--gold);
+    }
+
+    .quick-action span {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .dashboard-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+    }
+
+    .greeting-time {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 0.15rem;
+    }
+
+    .greeting-name {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .section-heading {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-primary);
+    }
+
+    .section-heading i { color: var(--gold); font-size: 0.85rem; }
+
+    @media (max-width: 900px) {
+      html, body { overflow: auto; }
+      .dashboard-layout { grid-template-columns: 1fr; height: auto; }
+      .dashboard-sidebar { display: none; }
+      .dashboard-main { padding: 1.5rem; }
+      .stats-row { grid-template-columns: 1fr 1fr; }
+      .rewards-section { grid-template-columns: 1fr; }
+      .quick-actions-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="cursor-dot" id="cursorDot"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <div class="dashboard-layout" id="dashboardLayout">
+    <!-- SIDEBAR -->
+    <aside class="dashboard-sidebar" role="navigation" aria-label="Dashboard navigation">
+      <a href="/" class="sidebar-logo" id="dashLogoLink">
+        <div class="nav-logo-mark">SL</div>
+        <span class="nav-logo-text">Sky<span style="color:var(--gold);">Luxe</span></span>
+      </a>
+
+      <div class="sidebar-section-label">Main</div>
+      <button class="sidebar-link active" data-panel="overview" id="navOverview">
+        <i class="fas fa-chart-pie"></i> Overview
+      </button>
+      <button class="sidebar-link" data-panel="bookings" id="navBookings">
+        <i class="fas fa-calendar-check"></i> My Bookings
+        <span class="sidebar-badge">3</span>
+      </button>
+      <button class="sidebar-link" data-panel="rewards" id="navRewards">
+        <i class="fas fa-coins"></i> SkyCoins
+      </button>
+
+      <div class="sidebar-section-label">Services</div>
+      <a class="sidebar-link" href="/flights" id="dashFlightsLink">
+        <i class="fas fa-plane"></i> Book Flights
+      </a>
+      <a class="sidebar-link" href="/private-jets" id="dashJetsLink">
+        <i class="fas fa-jet-fighter-up"></i> Charter Jets
+      </a>
+      <a class="sidebar-link" href="/concierge" id="dashConciergeLink">
+        <i class="fas fa-robot"></i> AI Concierge
+      </a>
+
+      <div class="sidebar-section-label">Account</div>
+      <button class="sidebar-link" data-panel="profile" id="navProfile">
+        <i class="fas fa-user"></i> Profile
+      </button>
+      <button class="sidebar-link" data-panel="settings" id="navSettings">
+        <i class="fas fa-gear"></i> Settings
+      </button>
+
+      <div class="sidebar-bottom">
+        <div class="user-pill" id="userPillEl">
+          <div class="user-avatar" id="userAvatarEl">GM</div>
+          <div>
+            <div class="user-name" id="userNameEl">Guest Member</div>
+            <div class="user-tier" id="userTierEl">✦ Gold Member</div>
+          </div>
+        </div>
+        <button class="sidebar-link" style="margin-top:0.5rem;color:#f87171;" id="logoutBtn">
+          <i class="fas fa-arrow-right-from-bracket"></i> Sign Out
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="dashboard-main" id="dashboardMain" role="main">
+
+      <!-- ── OVERVIEW PANEL ── -->
+      <div class="dashboard-panel active" id="panelOverview">
+        <div class="dashboard-header">
+          <div>
+            <div class="greeting-time" id="greetingTimeEl">Good morning</div>
+            <div class="greeting-name" id="greetingNameEl">Welcome back, Guest</div>
+          </div>
+          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+            <a href="/flights" class="btn btn-secondary" style="padding:0.6rem 1.25rem;font-size:0.85rem;border-radius:10px;" id="dashSearchFlightBtn">
+              <i class="fas fa-search"></i> Search Flights
+            </a>
+            <a href="/private-jets" class="btn btn-primary" style="padding:0.6rem 1.25rem;font-size:0.85rem;border-radius:10px;" id="dashCharterBtn">
+              <i class="fas fa-plane"></i> Charter a Jet
+            </a>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-plane"></i></div>
+            <div class="stat-val" id="statFlights">12</div>
+            <div class="stat-lbl">Total Flights</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-coins"></i></div>
+            <div class="stat-val text-gold-gradient" id="statCoins">2,847</div>
+            <div class="stat-lbl">SkyCoins</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-route"></i></div>
+            <div class="stat-val" id="statMiles">48,200</div>
+            <div class="stat-lbl">Miles Flown</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon"><i class="fas fa-crown"></i></div>
+            <div class="stat-val" style="font-size:1.1rem;" id="statTier">Gold</div>
+            <div class="stat-lbl">Member Tier</div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="section-heading"><i class="fas fa-bolt"></i> Quick Actions</div>
+        <div class="quick-actions-grid">
+          <a href="/flights" class="quick-action" id="qaSearchFlights">
+            <i class="fas fa-magnifying-glass"></i>
+            <span>Search Flights</span>
+          </a>
+          <a href="/private-jets" class="quick-action" id="qaCharterJet">
+            <i class="fas fa-jet-fighter-up"></i>
+            <span>Charter Jet</span>
+          </a>
+          <a href="/concierge" class="quick-action" id="qaAIConcierge">
+            <i class="fas fa-robot"></i>
+            <span>AI Concierge</span>
+          </a>
+          <button class="quick-action" id="qaRedeemCoins" onclick="switchPanel('rewards')">
+            <i class="fas fa-coins"></i>
+            <span>Redeem Coins</span>
+          </button>
+        </div>
+
+        <!-- Rewards Card + Upcoming -->
+        <div class="rewards-section">
+          <div class="rewards-card">
+            <div style="font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);margin-bottom:0.25rem;">Your SkyCoins Balance</div>
+            <div class="rewards-balance" id="rewardsBal">2,847</div>
+            <div style="font-size:0.8rem;color:var(--text-muted);">SkyCoins · ≈ ₹28,470 value</div>
+
+            <div style="margin:1.5rem 0 0.5rem;">
+              <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text-muted);margin-bottom:0.4rem;">
+                <span>Progress to Platinum</span>
+                <span id="coinsToNext">153 coins away</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width:95%;"></div>
+              </div>
+            </div>
+
+            <button class="btn btn-primary" style="padding:0.65rem 1.5rem;border-radius:10px;font-size:0.85rem;margin-top:1.25rem;" id="redeemCoinsBtn" onclick="switchPanel('rewards')">
+              <i class="fas fa-coins"></i> Redeem Coins
+            </button>
+          </div>
+
+          <div>
+            <div class="section-heading"><i class="fas fa-calendar"></i> Upcoming Flights</div>
+            <div id="upcomingFlights">
+              <div style="background:var(--glass-bg-light);border:var(--glass-border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:0.75rem;cursor:pointer;transition:border-color var(--transition-fast);" class="upcoming-card">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem;">
+                  <div>
+                    <div style="font-weight:700;font-size:0.95rem;">Emirates EK-302</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);">Jun 15, 2025</div>
+                  </div>
+                  <span class="booking-status status-confirmed"><i class="fas fa-circle" style="font-size:0.5rem;"></i> Confirmed</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:1rem;font-size:0.85rem;">
+                  <div><div style="font-weight:700;">DXB</div><div style="color:var(--text-muted);font-size:0.7rem;">21:30</div></div>
+                  <div style="flex:1;height:1px;background:linear-gradient(90deg,var(--border),var(--border-gold),var(--border));"></div>
+                  <div style="text-align:right;"><div style="font-weight:700;">JFK</div><div style="color:var(--text-muted);font-size:0.7rem;">12:00+1</div></div>
+                </div>
+              </div>
+              <div style="background:var(--glass-bg-light);border:var(--glass-border);border-radius:var(--radius-lg);padding:1.25rem;cursor:pointer;" class="upcoming-card">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem;">
+                  <div>
+                    <div style="font-weight:700;font-size:0.95rem;">SkyLuxe G700</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);">Jul 3, 2025</div>
+                  </div>
+                  <span class="booking-status status-pending"><i class="fas fa-circle" style="font-size:0.5rem;"></i> Pending</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:1rem;font-size:0.85rem;">
+                  <div><div style="font-weight:700;">BOM</div><div style="color:var(--text-muted);font-size:0.7rem;">09:00</div></div>
+                  <div style="flex:1;height:1px;background:linear-gradient(90deg,var(--border),var(--border-gold),var(--border));"></div>
+                  <div style="text-align:right;"><div style="font-weight:700;">DXB</div><div style="color:var(--text-muted);font-size:0.7rem;">11:30</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── BOOKINGS PANEL ── -->
+      <div class="dashboard-panel" id="panelBookings">
+        <div class="dashboard-header">
+          <div>
+            <div class="greeting-time">Manage</div>
+            <div class="greeting-name">My Bookings</div>
+          </div>
+          <a href="/flights" class="btn btn-primary" style="padding:0.6rem 1.25rem;font-size:0.85rem;border-radius:10px;" id="newBookingBtn">
+            <i class="fas fa-plus"></i> New Booking
+          </a>
+        </div>
+
+        <div style="background:var(--glass-bg-light);border:var(--glass-border);border-radius:var(--radius-xl);overflow:hidden;">
+          <table class="bookings-table">
+            <thead>
+              <tr>
+                <th>Booking ID</th>
+                <th>Route</th>
+                <th>Date</th>
+                <th>Class</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-weight:600;color:var(--gold);">LUX2025001</td>
+                <td>DXB → JFK</td>
+                <td>Jun 15, 2025</td>
+                <td>First Class</td>
+                <td>₹2,45,000</td>
+                <td><span class="booking-status status-confirmed"><i class="fas fa-circle" style="font-size:0.4rem;"></i> Confirmed</span></td>
+                <td><button class="btn btn-secondary" style="padding:0.3rem 0.75rem;font-size:0.75rem;border-radius:8px;">View</button></td>
+              </tr>
+              <tr>
+                <td style="font-weight:600;color:var(--gold);">LUX2025002</td>
+                <td>BOM → DXB</td>
+                <td>Jul 3, 2025</td>
+                <td>Private Jet</td>
+                <td>₹3,20,000</td>
+                <td><span class="booking-status status-pending"><i class="fas fa-circle" style="font-size:0.4rem;"></i> Pending</span></td>
+                <td><button class="btn btn-secondary" style="padding:0.3rem 0.75rem;font-size:0.75rem;border-radius:8px;">View</button></td>
+              </tr>
+              <tr>
+                <td style="font-weight:600;color:var(--gold);">LUX2024089</td>
+                <td>SIN → LHR</td>
+                <td>Dec 10, 2024</td>
+                <td>Business</td>
+                <td>₹1,85,000</td>
+                <td><span class="booking-status status-completed"><i class="fas fa-circle" style="font-size:0.4rem;"></i> Completed</span></td>
+                <td><button class="btn btn-secondary" style="padding:0.3rem 0.75rem;font-size:0.75rem;border-radius:8px;">Receipt</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── REWARDS PANEL ── -->
+      <div class="dashboard-panel" id="panelRewards">
+        <div class="dashboard-header">
+          <div>
+            <div class="greeting-time">Your Loyalty</div>
+            <div class="greeting-name">SkyCoins Rewards</div>
+          </div>
+        </div>
+
+        <div style="background:linear-gradient(135deg, rgba(212,175,55,0.1), rgba(8,8,16,0.9));border:1px solid rgba(212,175,55,0.2);border-radius:var(--radius-xl);padding:2.5rem;margin-bottom:2rem;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:-60px;right:-60px;width:250px;height:250px;background:radial-gradient(circle,rgba(212,175,55,0.15),transparent 70%);"></div>
+          <div style="font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);margin-bottom:0.5rem;">Current Balance</div>
+          <div style="font-family:var(--font-display);font-size:4rem;font-weight:800;background:var(--gold-text-gradient);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;line-height:1;">2,847</div>
+          <div style="font-size:0.9rem;color:var(--text-muted);margin-top:0.5rem;margin-bottom:2rem;">SkyCoins · Equivalent to ₹28,470 in travel credits</div>
+
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">
+            <div style="background:rgba(255,255,255,0.04);border-radius:12px;padding:1rem;text-align:center;">
+              <div style="font-size:1.25rem;font-weight:700;color:var(--gold);">+240</div>
+              <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.25rem;">Earned this month</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.04);border-radius:12px;padding:1rem;text-align:center;">
+              <div style="font-size:1.25rem;font-weight:700;color:var(--gold);">153</div>
+              <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.25rem;">Points to Platinum</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.04);border-radius:12px;padding:1rem;text-align:center;">
+              <div style="font-size:1.25rem;font-weight:700;color:var(--gold);">10%</div>
+              <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.25rem;">Gold bonus rate</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-heading"><i class="fas fa-gift"></i> Redeem SkyCoins</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">
+          <div style="background:var(--glass-bg-light);border:var(--glass-border);border-radius:var(--radius-lg);padding:1.5rem;cursor:pointer;transition:all var(--transition-fast);" onmouseover="this.style.borderColor='rgba(212,175,55,0.3)'" onmouseout="this.style.borderColor=''" id="redeemUpgrade">
+            <i class="fas fa-arrow-up" style="color:var(--gold);font-size:1.25rem;margin-bottom:0.75rem;display:block;"></i>
+            <div style="font-weight:700;margin-bottom:0.25rem;">Seat Upgrade</div>
+            <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1rem;">Upgrade to Business/First Class</div>
+            <div style="font-size:0.85rem;"><span style="color:var(--gold);font-weight:700;">500</span> coins</div>
+          </div>
+          <div style="background:var(--glass-bg-light);border:var(--glass-border);border-radius:var(--radius-lg);padding:1.5rem;cursor:pointer;transition:all var(--transition-fast);" onmouseover="this.style.borderColor='rgba(212,175,55,0.3)'" onmouseout="this.style.borderColor=''" id="redeemLounge">
+            <i class="fas fa-couch" style="color:var(--gold);font-size:1.25rem;margin-bottom:0.75rem;display:block;"></i>
+            <div style="font-weight:700;margin-bottom:0.25rem;">Lounge Access</div>
+            <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1rem;">Access any premium lounge</div>
+            <div style="font-size:0.85rem;"><span style="color:var(--gold);font-weight:700;">200</span> coins</div>
+          </div>
+          <div style="background:var(--glass-bg-light);border:var(--glass-border);border-radius:var(--radius-lg);padding:1.5rem;cursor:pointer;transition:all var(--transition-fast);" onmouseover="this.style.borderColor='rgba(212,175,55,0.3)'" onmouseout="this.style.borderColor=''" id="redeemDiscount">
+            <i class="fas fa-percent" style="color:var(--gold);font-size:1.25rem;margin-bottom:0.75rem;display:block;"></i>
+            <div style="font-weight:700;margin-bottom:0.25rem;">Flight Discount</div>
+            <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1rem;">₹10,000 off next booking</div>
+            <div style="font-size:0.85rem;"><span style="color:var(--gold);font-weight:700;">1,000</span> coins</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PROFILE PANEL ── -->
+      <div class="dashboard-panel" id="panelProfile">
+        <div class="dashboard-header">
+          <div>
+            <div class="greeting-time">Account</div>
+            <div class="greeting-name">My Profile</div>
+          </div>
+          <button class="btn btn-primary" style="padding:0.6rem 1.25rem;font-size:0.85rem;border-radius:10px;" id="saveProfileBtn">
+            <i class="fas fa-save"></i> Save Changes
+          </button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 2fr;gap:2rem;align-items:start;">
+          <div style="background:var(--glass-bg-light);border:var(--glass-border);border-radius:var(--radius-xl);padding:2rem;text-align:center;">
+            <div style="width:80px;height:80px;background:var(--gold-gradient);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:700;color:var(--void);margin:0 auto 1rem;" id="profileAvatarBig">GM</div>
+            <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;margin-bottom:0.25rem;" id="profileNameDisplay">Guest Member</div>
+            <div style="font-size:0.8rem;color:var(--gold);margin-bottom:1.5rem;" id="profileTierDisplay">✦ Gold Member</div>
+            <button class="btn btn-secondary w-full" style="border-radius:10px;justify-content:center;" id="changePhotoBtn">Change Photo</button>
+          </div>
+
+          <div style="background:var(--glass-bg-light);border:var(--glass-border);border-radius:var(--radius-xl);padding:2rem;">
+            <div class="section-heading" style="margin-bottom:1.5rem;"><i class="fas fa-user"></i> Personal Information</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+              <div class="form-group">
+                <label class="form-label" for="pFirstName">First Name</label>
+                <input class="form-control" type="text" id="pFirstName" placeholder="First name">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="pLastName">Last Name</label>
+                <input class="form-control" type="text" id="pLastName" placeholder="Last name">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="pEmail">Email Address</label>
+              <input class="form-control" type="email" id="pEmail" placeholder="you@example.com">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="pPhone">Phone Number</label>
+              <input class="form-control" type="tel" id="pPhone" placeholder="+91 98765 43210">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="pPassport">Passport Number</label>
+              <input class="form-control" type="text" id="pPassport" placeholder="For faster check-in">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SETTINGS PANEL ── -->
+      <div class="dashboard-panel" id="panelSettings">
+        <div class="dashboard-header">
+          <div>
+            <div class="greeting-time">Account</div>
+            <div class="greeting-name">Settings</div>
+          </div>
+        </div>
+        <div style="background:var(--glass-bg-light);border:var(--glass-border);border-radius:var(--radius-xl);padding:2rem;max-width:560px;">
+          <div class="section-heading" style="margin-bottom:1.5rem;"><i class="fas fa-bell"></i> Notifications</div>
+          <div style="display:flex;flex-direction:column;gap:1rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+              <div><div style="font-size:0.9rem;font-weight:500;">Flight Updates</div><div style="font-size:0.78rem;color:var(--text-muted);">Delays, gate changes, boarding</div></div>
+              <label style="cursor:pointer;"><input type="checkbox" checked style="accent-color:var(--gold);transform:scale(1.4);"></label>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+              <div><div style="font-size:0.9rem;font-weight:500;">SkyCoins Updates</div><div style="font-size:0.78rem;color:var(--text-muted);">Points earned and tier changes</div></div>
+              <label style="cursor:pointer;"><input type="checkbox" checked style="accent-color:var(--gold);transform:scale(1.4);"></label>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+              <div><div style="font-size:0.9rem;font-weight:500;">Exclusive Offers</div><div style="font-size:0.78rem;color:var(--text-muted);">Member deals and promotions</div></div>
+              <label style="cursor:pointer;"><input type="checkbox" style="accent-color:var(--gold);transform:scale(1.4);"></label>
+            </div>
+          </div>
+
+          <div class="section-heading" style="margin:2rem 0 1rem;"><i class="fas fa-shield-halved"></i> Security</div>
+          <div style="display:flex;flex-direction:column;gap:0.75rem;">
+            <button class="btn btn-secondary" style="justify-content:flex-start;border-radius:10px;" id="changePwdSettingBtn">
+              <i class="fas fa-lock"></i> Change Password
+            </button>
+            <button class="btn btn-secondary" style="justify-content:flex-start;border-radius:10px;" id="enable2FABtn">
+              <i class="fas fa-mobile-alt"></i> Enable Two-Factor Auth
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast-container" id="toastContainer" role="alert" aria-live="polite"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    // ── AUTH GUARD ──
+    const token = localStorage.getItem('skyluxe_token');
+    const userStr = localStorage.getItem('skyluxe_user');
+
+    if (!token) {
+      window.location.href = '/login';
+    }
+
+    let user = { name: 'Guest Member', email: 'guest@skyluxe.com', tier: 'Gold' };
+    if (userStr) {
+      try { user = JSON.parse(userStr); } catch {}
+    }
+
+    // ── POPULATE USER DATA ──
+    const displayName = user.name || user.firstName + ' ' + user.lastName || 'Elite Member';
+    const initials = displayName.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+    const tier = user.tier || 'Gold';
+
+    document.getElementById('userNameEl').textContent = displayName;
+    document.getElementById('userTierEl').textContent = '✦ ' + tier + ' Member';
+    document.getElementById('userAvatarEl').textContent = initials;
+    document.getElementById('profileAvatarBig').textContent = initials;
+    document.getElementById('profileNameDisplay').textContent = displayName;
+    document.getElementById('profileTierDisplay').textContent = '✦ ' + tier + ' Member';
+    document.getElementById('statTier').textContent = tier;
+
+    if (user.email) document.getElementById('pEmail').value = user.email;
+
+    // Greeting
+    const hour = new Date().getHours();
+    const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    document.getElementById('greetingTimeEl').textContent = greeting;
+    document.getElementById('greetingNameEl').textContent = 'Welcome back, ' + displayName.split(' ')[0];
+
+    // ── CURSOR ──
+    const dot=document.getElementById('cursorDot'),ring=document.getElementById('cursorRing');
+    let mx=0,my=0,rx=0,ry=0;
+    document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;dot.style.left=mx+'px';dot.style.top=my+'px';});
+    (function ar(){rx+=(mx-rx)*0.1;ry+=(my-ry)*0.1;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(ar);})();
+    document.querySelectorAll('a,button').forEach(el=>{
+      el.addEventListener('mouseenter',()=>document.body.classList.add('cursor-hover'));
+      el.addEventListener('mouseleave',()=>document.body.classList.remove('cursor-hover'));
+    });
+
+    // ── PANEL NAVIGATION ──
+    function switchPanel(panelId) {
+      document.querySelectorAll('.dashboard-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('panel' + panelId.charAt(0).toUpperCase() + panelId.slice(1)).classList.add('active');
+
+      document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+      const activeBtn = document.querySelector(`[data-panel="${panelId}"]`);
+      if (activeBtn) activeBtn.classList.add('active');
+    }
+
+    document.querySelectorAll('.sidebar-link[data-panel]').forEach(link => {
+      link.addEventListener('click', () => switchPanel(link.dataset.panel));
+    });
+
+    // ── LOGOUT ──
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('skyluxe_token');
+      localStorage.removeItem('skyluxe_user');
+      gsap.to('body', { opacity: 0, duration: 0.4, onComplete: () => { window.location.href = '/'; }});
+    });
+
+    // ── SAVE PROFILE ──
+    document.getElementById('saveProfileBtn').addEventListener('click', () => {
+      showToast('Profile Saved', 'Your profile has been updated successfully.', 'success');
+    });
+
+    // ── TOAST ──
+    function showToast(title, msg, type='info') {
+      const c=document.getElementById('toastContainer');
+      const icon=type==='success'?'fa-circle-check':type==='error'?'fa-circle-xmark':'fa-circle-info';
+      const t=document.createElement('div');
+      t.className=`toast ${type}`;
+      t.innerHTML=`<i class="fas ${icon} toast-icon"></i><div><div class="toast-title">${title}</div><div class="toast-message">${msg}</div></div>`;
+      c.appendChild(t);
+      setTimeout(()=>{t.style.transition='all 0.4s ease';t.style.opacity='0';t.style.transform='translateX(110%)';setTimeout(()=>t.remove(),400);},3500);
+    }
+
+    // ── REDEEM ACTIONS ──
+    ['redeemUpgrade','redeemLounge','redeemDiscount'].forEach(id => {
+      document.getElementById(id)?.addEventListener('click', () => {
+        showToast('Redemption Initiated', 'Your SkyCoins have been applied. Confirmation sent to your email.', 'success');
+      });
+    });
+
+    // ── UPCOMING CARD HOVER ──
+    document.querySelectorAll('.upcoming-card').forEach(card => {
+      card.addEventListener('mouseenter', () => { card.style.borderColor = 'rgba(212,175,55,0.3)'; });
+      card.addEventListener('mouseleave', () => { card.style.borderColor = ''; });
+    });
+
+    // ── GSAP ENTRY ──
+    gsap.from('.stat-card', { y: 20, opacity: 0, duration: 0.6, stagger: 0.1, ease: 'power3.out', delay: 0.2 });
+    gsap.from('.quick-action', { y: 20, opacity: 0, duration: 0.5, stagger: 0.08, ease: 'power3.out', delay: 0.4 });
+    gsap.from('body', { opacity: 0, duration: 0.4 });
+
+    // ── PAGE TRANSITIONS ──
+    document.querySelectorAll('a[href^="/"]').forEach(link=>{
+      link.addEventListener('click',function(e){
+        const href=this.getAttribute('href');
+        if(href==='/dashboard') return;
+        e.preventDefault();
+        gsap.to('body',{opacity:0,duration:0.35,onComplete:()=>{window.location.href=href;}});
+      });
+    });
+  </script>
+</body>
+</html>
