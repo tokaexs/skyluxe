@@ -411,10 +411,7 @@
     });
 
     document.getElementById('googleLoginBtn').addEventListener('click', () => {
-      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>&nbsp; Connecting to Google...';
-      setTimeout(() => {
-        submitBtn.innerHTML = '<i class="fas fa-arrow-right-to-bracket"></i>&nbsp; Sign In Securely';
-      }, 1500);
+      window.location.href = '/api/auth/google';
     });
 
     // ── NAV TRANSITIONS ──

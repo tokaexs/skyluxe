@@ -763,39 +763,99 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="/js/main.js"></script>
   <script>
-    // ── AUTH GUARD ──
+    // ── AUTH & OAUTH TOKEN RESOLVER ──
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlToken = urlParams.get('token');
+    
+    if (urlToken) {
+      console.log('Client log: Found JWT in URL, saving to localStorage');
+      localStorage.setItem('skyluxe_token', urlToken);
+      // Remove token query param from URL bar for clean browsing
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     const token = localStorage.getItem('skyluxe_token');
-    const userStr = localStorage.getItem('skyluxe_user');
 
     if (!token) {
+      console.log('Client log: No token found, redirecting to login page');
       window.location.href = '/login';
     }
 
-    let user = { name: 'Guest Member', email: 'guest@skyluxe.com', tier: 'Gold' };
-    if (userStr) {
-      try { user = JSON.parse(userStr); } catch {}
+    // Function to populate UI elements with user data
+    function populateUserData(userData) {
+      console.log('Client log: Populating user data:', userData);
+      const displayName = userData.name || (userData.firstName + ' ' + (userData.lastName || '')) || 'Elite Member';
+      const initials = displayName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+      const tier = userData.membership || 'silver';
+      const capitalizedTier = tier.charAt(0).toUpperCase() + tier.slice(1);
+
+      document.getElementById('userNameEl').textContent = displayName;
+      document.getElementById('userTierEl').textContent = '✦ ' + capitalizedTier + ' Member';
+      
+      // If user has an avatar URL (from Google OAuth), use it to set as img background or avatar content
+      if (userData.avatar) {
+        document.getElementById('userAvatarEl').innerHTML = `<img src="${userData.avatar}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+        document.getElementById('profileAvatarBig').innerHTML = `<img src="${userData.avatar}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+      } else {
+        document.getElementById('userAvatarEl').textContent = initials;
+        document.getElementById('profileAvatarBig').textContent = initials;
+      }
+
+      document.getElementById('profileNameDisplay').textContent = displayName;
+      document.getElementById('profileTierDisplay').textContent = '✦ ' + capitalizedTier + ' Member';
+      document.getElementById('statTier').textContent = capitalizedTier;
+
+      if (userData.email) document.getElementById('pEmail').value = userData.email;
+      if (userData.firstName) document.getElementById('pFirstName').value = userData.firstName;
+      if (userData.lastName) document.getElementById('pLastName').value = userData.lastName;
+      if (userData.phone) document.getElementById('pPhone').value = userData.phone;
+
+      // Greeting
+      const hour = new Date().getHours();
+      const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+      document.getElementById('greetingTimeEl').textContent = greeting;
+      document.getElementById('greetingNameEl').textContent = 'Welcome back, ' + (userData.firstName || displayName.split(' ')[0]);
     }
 
-    // ── POPULATE USER DATA ──
-    const displayName = user.name || user.firstName + ' ' + user.lastName || 'Elite Member';
-    const initials = displayName.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
-    const tier = user.tier || 'Gold';
+    // ── FETCH USER FROM BACKEND ──
+    async function fetchUser() {
+      try {
+        const response = await fetch('/api/auth/me', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
 
-    document.getElementById('userNameEl').textContent = displayName;
-    document.getElementById('userTierEl').textContent = '✦ ' + tier + ' Member';
-    document.getElementById('userAvatarEl').textContent = initials;
-    document.getElementById('profileAvatarBig').textContent = initials;
-    document.getElementById('profileNameDisplay').textContent = displayName;
-    document.getElementById('profileTierDisplay').textContent = '✦ ' + tier + ' Member';
-    document.getElementById('statTier').textContent = tier;
+        if (!response.ok) {
+          throw new Error('Failed to authenticate');
+        }
 
-    if (user.email) document.getElementById('pEmail').value = user.email;
+        const userData = await response.json();
+        localStorage.setItem('skyluxe_user', JSON.stringify(userData));
+        populateUserData(userData);
+      } catch (err) {
+        console.error('Client log: Authentication failed on fetchUser:', err);
+        localStorage.removeItem('skyluxe_token');
+        localStorage.removeItem('skyluxe_user');
+        window.location.href = '/login';
+      }
+    }
 
-    // Greeting
-    const hour = new Date().getHours();
-    const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-    document.getElementById('greetingTimeEl').textContent = greeting;
-    document.getElementById('greetingNameEl').textContent = 'Welcome back, ' + displayName.split(' ')[0];
+    // Load initial user state (either from cache temporarily, then refresh from backend)
+    const cachedUserStr = localStorage.getItem('skyluxe_user');
+    if (cachedUserStr) {
+      try {
+        const cachedUser = JSON.parse(cachedUserStr);
+        populateUserData(cachedUser);
+      } catch (e) {
+        console.warn('Client log: Error parsing cached user data:', e);
+      }
+    }
+
+    // Fetch and sync with backend
+    fetchUser();
 
     // ── CURSOR ──
     const dot=document.getElementById('cursorDot'),ring=document.getElementById('cursorRing');
@@ -822,7 +882,20 @@
     });
 
     // ── LOGOUT ──
-    document.getElementById('logoutBtn').addEventListener('click', () => {
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      try {
+        // Clear on backend
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      } catch (err) {
+        console.error('Client log: Logout API request failed:', err);
+      }
+      
+      // Clear on client
       localStorage.removeItem('skyluxe_token');
       localStorage.removeItem('skyluxe_user');
       gsap.to('body', { opacity: 0, duration: 0.4, onComplete: () => { window.location.href = '/'; }});

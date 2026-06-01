@@ -155,4 +155,70 @@ router.put('/profile',
   }
 );
 
-module.exports = router; 
+const passport = require('passport');
+const requireAuth = require('../middleware/requireAuth');
+
+// Trigger Google OAuth Flow
+router.get('/google', (req, res, next) => {
+  console.log('Backend log: Google OAuth login flow initiated');
+  next();
+}, passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+// Google OAuth Callback
+router.get('/google/callback',
+  passport.authenticate('google', { failureRedirect: '/login?error=oauth_failed', session: true }),
+  (req, res) => {
+    try {
+      console.log('Backend log: Google OAuth callback success for user:', req.user.email);
+      // Generate JWT token
+      const token = jwt.sign(
+        { userId: req.user._id },
+        process.env.JWT_SECRET || 'your-secret-key',
+        { expiresIn: '24h' }
+      );
+      console.log('Backend log: JWT successfully generated, redirecting to dashboard');
+      // Redirect to dashboard with token as query parameter
+      res.redirect(`/dashboard?token=${token}`);
+    } catch (error) {
+      console.error('Backend log: Error during Google OAuth callback processing:', error);
+      res.redirect('/login?error=server_error');
+    }
+  }
+);
+
+// Fetch authenticated user
+router.get('/me', requireAuth, (req, res) => {
+  console.log('Backend log: Fetching authenticated user details for:', req.user.email);
+  res.json({
+    id: req.user._id || req.user.id,
+    firstName: req.user.firstName,
+    lastName: req.user.lastName,
+    email: req.user.email,
+    membership: req.user.membership,
+    avatar: req.user.avatar,
+    provider: req.user.provider
+  });
+});
+
+// Logout user
+router.post('/logout', (req, res, next) => {
+  console.log('Backend log: Logout request initiated');
+  req.logout((err) => {
+    if (err) {
+      console.error('Backend log: Error logging out via passport:', err);
+      return next(err);
+    }
+    req.session.destroy((destroyErr) => {
+      if (destroyErr) {
+        console.error('Backend log: Error destroying express session:', destroyErr);
+        return res.status(500).json({ message: 'Error clearing session' });
+      }
+      res.clearCookie('connect.sid');
+      console.log('Backend log: Session cleared and cookie removed successfully');
+      res.json({ message: 'Logged out successfully' });
+    });
+  });
+});
+
+module.exports = router;
+ 
