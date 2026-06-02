@@ -162,7 +162,7 @@ export default function Billing() {
         userId: profile.id
       });
 
-      const { orderId, amount: rzpAmount, currency, keyId } = orderRes;
+      const { orderId, amount: rzpAmount, currency: orderCurrency, keyId } = orderRes;
 
       const handleVerification = async (verifyPayload: any) => {
         const verifyRes = await api.post<any>("/payments/verify", verifyPayload);
@@ -194,7 +194,7 @@ export default function Billing() {
       const options = {
         key: keyId,
         amount: rzpAmount,
-        currency: currency,
+        currency: orderCurrency,
         name: "SkyLuxe Aviation",
         description: "FBO Wallet Funding",
         order_id: orderId,
@@ -767,7 +767,7 @@ export default function Billing() {
 
                 <button 
                   type="submit"
-                  disabled={isWithdrawing || !withdrawAmount || parseFloat(withdrawAmount) <= 0 || parseFloat(withdrawAmount) > walletBalance}
+                  disabled={isWithdrawing || !withdrawAmount || parseFloat(withdrawAmount) <= 0 || parseFloat(withdrawAmount) > (currency === "USD" ? walletBalance : walletBalance * 83)}
                   className="w-full py-4 rounded-xl bg-gold text-onyx font-bold hover:bg-gold-light disabled:bg-white/10 disabled:text-platinum/40 disabled:cursor-not-allowed transition-colors shadow-[0_0_15px_rgba(212,175,55,0.3)] flex justify-center items-center gap-2 cursor-pointer text-sm"
                 >
                   {isWithdrawing ? (

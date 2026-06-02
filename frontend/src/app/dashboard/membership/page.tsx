@@ -135,8 +135,17 @@ export default function MembershipManagement() {
   const currentPlan = getActivePlanDetails();
 
   return (
-    <div className="space-y-8 flex-1 pb-12 relative">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+    <div className="space-y-8 flex-1 pb-12 relative z-10">
+      {/* Atmospheric Runway Background Overlay */}
+      <div className="absolute inset-0 -m-8 z-0 pointer-events-none overflow-hidden rounded-3xl opacity-15">
+        <div 
+          className="absolute inset-0 bg-cover bg-center mix-blend-luminosity"
+          style={{ backgroundImage: "url('/runway-membership-bg.png')" }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-onyx/60 to-onyx" />
+      </div>
+
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 relative z-10">
         <div>
           <h1 className="text-3xl font-serif font-bold text-white mb-2">Sovereign Membership Club</h1>
           <p className="text-platinum/50 font-light text-sm">
