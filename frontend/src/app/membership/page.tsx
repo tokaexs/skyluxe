@@ -10,8 +10,13 @@ export default function Membership() {
     <main className="relative min-h-screen bg-onyx flex flex-col pb-24">
       <GlassNavbar />
 
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[600px] bg-gradient-to-b from-gold/10 to-transparent opacity-50 mix-blend-overlay" />
+      {/* Atmospheric Runway Background Overlay */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0 opacity-45">
+        <div 
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: "url('/runway-membership-bg.png')" }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-onyx/75 to-onyx" />
       </div>
 
       <div className="relative z-10 pt-40 px-6 lg:px-16 max-w-7xl mx-auto w-full text-center">

@@ -137,12 +137,12 @@ export default function MembershipManagement() {
   return (
     <div className="space-y-8 flex-1 pb-12 relative z-10">
       {/* Atmospheric Runway Background Overlay */}
-      <div className="absolute inset-0 -m-8 z-0 pointer-events-none overflow-hidden rounded-3xl opacity-15">
+      <div className="absolute inset-0 -m-8 z-0 pointer-events-none overflow-hidden rounded-3xl opacity-45">
         <div 
-          className="absolute inset-0 bg-cover bg-center mix-blend-luminosity"
+          className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: "url('/runway-membership-bg.png')" }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-onyx/60 to-onyx" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-onyx/75 to-onyx" />
       </div>
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 relative z-10">
