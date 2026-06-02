@@ -88,7 +88,7 @@ export default function Register() {
 
       const loginData = await loginRes.json();
       login(loginData.access_token);
-      router.push("/dashboard");
+      router.push("/");
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred.");
     } finally {

@@ -31,7 +31,7 @@ router.post('/search',
           $lt: new Date(new Date(date).setDate(new Date(date).getDate() + 1))
         },
         [`availableSeats.${cabinClass}`]: { $gte: passengers }
-      });
+      }).populate('airline');
 
       res.json(flights);
     } catch (error) {
@@ -44,7 +44,7 @@ router.post('/search',
 // Get flight details
 router.get('/:id', async (req, res) => {
   try {
-    const flight = await Flight.findById(req.params.id);
+    const flight = await Flight.findById(req.params.id).populate('airline');
     if (!flight) {
       return res.status(404).json({ message: 'Flight not found' });
     }

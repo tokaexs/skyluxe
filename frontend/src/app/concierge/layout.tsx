@@ -46,7 +46,7 @@ export default function ConciergeLayout({ children }: { children: React.ReactNod
 
       <div className="flex flex-1 pt-20 relative z-10">
         {/* Left Sidebar */}
-        <aside className="w-72 shrink-0 h-[calc(100vh-5rem)] sticky top-20 overflow-y-auto border-r border-white/5 bg-black/40 backdrop-blur-xl flex flex-col custom-scrollbar">
+        <aside data-lenis-prevent className="w-72 shrink-0 h-[calc(100vh-5rem)] sticky top-20 overflow-y-auto border-r border-white/5 bg-black/40 backdrop-blur-xl flex flex-col custom-scrollbar">
           {/* AI Status */}
           <div className="p-6 border-b border-white/5">
             <div className="flex items-center gap-3 mb-1">
@@ -128,7 +128,7 @@ export default function ConciergeLayout({ children }: { children: React.ReactNod
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 min-w-0 overflow-y-auto h-[calc(100vh-5rem)]">
+        <main data-lenis-prevent className="flex-1 min-w-0 overflow-y-auto h-[calc(100vh-5rem)]">
           {children}
         </main>
       </div>

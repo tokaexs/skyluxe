@@ -113,6 +113,7 @@ export default function ConciergeAI() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
             className="lg:col-span-3 flex flex-col gap-6 overflow-y-auto pr-2 custom-scrollbar"
+            data-lenis-prevent
           >
             <div className="glass-panel p-6 rounded-2xl border border-white/10 relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-gold/10 rounded-full blur-[40px] -translate-y-1/2 translate-x-1/4" />
@@ -167,7 +168,7 @@ export default function ConciergeAI() {
             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/40 pointer-events-none" />
 
             {/* Neural Chat History */}
-            <div ref={chatRef} className="flex-1 p-8 overflow-y-auto flex flex-col gap-8 relative z-10 custom-scrollbar scroll-smooth">
+            <div ref={chatRef} data-lenis-prevent className="flex-1 p-8 overflow-y-auto flex flex-col gap-8 relative z-10 custom-scrollbar scroll-smooth">
               
               <AnimatePresence>
                 {messages.map((msg) => (
@@ -286,6 +287,7 @@ export default function ConciergeAI() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
             className="lg:col-span-3 flex flex-col gap-6 overflow-y-auto pl-2 custom-scrollbar"
+            data-lenis-prevent
           >
             <div className="glass-panel rounded-2xl border border-white/10 overflow-hidden relative group">
               <div className="h-40 bg-[url('https://images.unsplash.com/photo-1570129477492-45c003edd2be?q=80&w=800&auto=format&fit=crop')] bg-cover bg-center opacity-80 mix-blend-luminosity group-hover:mix-blend-normal transition-all duration-700" />
@@ -456,7 +458,7 @@ function ModalOverlay({ children, onClose, title }: { children: React.ReactNode,
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="overflow-y-auto custom-scrollbar">
+        <div data-lenis-prevent className="overflow-y-auto custom-scrollbar">
           {children}
         </div>
       </motion.div>

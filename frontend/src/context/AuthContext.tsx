@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSkyLuxeStore } from "@/store/skyluxeStore";
 
 // Utility to manage cookies on the client side
 function setCookie(name: string, value: string, days: number) {
@@ -48,6 +49,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const token = getCookie("skyluxe_auth_token");
     if (token) {
       setIsAuthenticated(true);
+      // Automatically hydrate global user store
+      useSkyLuxeStore.getState().fetchInitialData();
     }
     setIsLoading(false);
   }, []);
@@ -55,11 +58,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = (token: string) => {
     setCookie("skyluxe_auth_token", token, 7); // 7 days expiration
     setIsAuthenticated(true);
+    useSkyLuxeStore.getState().fetchInitialData();
   };
 
   const logout = () => {
     eraseCookie("skyluxe_auth_token");
     setIsAuthenticated(false);
+    // Reset store state optional
     router.push("/auth/login");
   };
 

@@ -32,6 +32,10 @@ function LoginContent() {
 
   const redirectPath = searchParams.get("redirect") || "/dashboard";
 
+  const handleLoginRedirect = (user: any) => {
+    router.push("/");
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -51,7 +55,7 @@ function LoginContent() {
 
       const data = await response.json();
       login(data.access_token);
-      router.push(redirectPath);
+      handleLoginRedirect(data.user);
     } catch (err: any) {
       setError(err.message || "Unable to connect to authentication servers.");
     } finally {
@@ -80,7 +84,7 @@ function LoginContent() {
               }
               const data = await res.json();
               login(data.access_token);
-              router.push(redirectPath);
+              handleLoginRedirect(data.user);
             } catch (err: any) {
               setError(err.message || "Google validation failed on API.");
               setIsLoadingGoogle(false);
@@ -114,7 +118,7 @@ function LoginContent() {
         }
         const data = await res.json();
         login(data.access_token);
-        router.push(redirectPath);
+        handleLoginRedirect(data.user);
       }
     } catch (err: any) {
       setError(err.message || "Failed to coordinate Google Sign-In.");
@@ -150,7 +154,7 @@ function LoginContent() {
         }
         const data = await res.json();
         login(data.access_token);
-        router.push(redirectPath);
+        handleLoginRedirect(data.user);
       } else {
         // Offline sandbox credential generator
         console.log("Apple Sign-In client not loaded or using placeholder ID. Generating local test credential.");
@@ -176,7 +180,7 @@ function LoginContent() {
         }
         const data = await res.json();
         login(data.access_token);
-        router.push(redirectPath);
+        handleLoginRedirect(data.user);
       }
     } catch (err: any) {
       setError(err.message || "Failed to coordinate Apple Sign-In.");

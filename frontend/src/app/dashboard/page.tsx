@@ -1,12 +1,14 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Plane, Calendar, CreditCard, ArrowUpRight, Clock, ShieldAlert, Navigation } from "lucide-react";
+import { Plane, Calendar, CreditCard, ArrowUpRight, Clock, ShieldAlert, Navigation, LogOut } from "lucide-react";
 import Link from "next/link";
 import { useSkyLuxeStore } from "@/store/skyluxeStore";
+import { useAuth } from "@/context/AuthContext";
 
 export default function DashboardOverview() {
   const { walletBalance, flights, profile } = useSkyLuxeStore();
+  const { logout } = useAuth();
   
   // Find next upcoming flight
   const upcomingFlights = flights.filter(f => f.status === "Confirmed");
@@ -22,6 +24,20 @@ export default function DashboardOverview() {
 
   return (
     <div className="space-y-8 flex-1">
+      {/* Top Header section */}
+      <div className="flex justify-between items-center bg-white/5 border border-white/10 p-6 rounded-3xl">
+        <div>
+          <h2 className="text-xl font-serif font-bold text-white">Dashboard Overview</h2>
+          <p className="text-platinum/50 text-xs font-light mt-1">Manage flight dispatches, credentials, and wallet settlements.</p>
+        </div>
+        <button 
+          onClick={logout}
+          className="px-4 py-2.5 rounded-xl border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all duration-300 cursor-pointer"
+        >
+          <LogOut className="w-4 h-4" />
+          Sign Out
+        </button>
+      </div>
       {/* Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <MetricCard title="Total Flight Hours Secured" value={`${totalFlightHours} hrs`} trend="+12 hours this month" icon={Clock} />

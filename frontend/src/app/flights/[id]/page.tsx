@@ -20,6 +20,8 @@ import {
 import Link from "next/link";
 import { useSearchParams, useRouter, useParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
+import { api } from "@/lib/api";
+import { useSkyLuxeStore } from "@/store/skyluxeStore";
 
 const flightDetailDB: Record<string, any> = {
   "AI-101": { airline: "Air India", name: "Maharaja Business Suite", aircraft: "Airbus A350-900", price: 350, meal: "Indian Heritage Tasting Menu", lounge: "BOM Lounge Prime", wifi: "High-Speed complimentary", stops: "Nonstop" },
@@ -98,26 +100,105 @@ function DetailsContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { currency, formatAmount } = useSkyLuxeStore();
 
   const flightId = (params?.id as string) || "AI-101";
   const fromCode = searchParams.get("from") || "BOM";
   const toCode = searchParams.get("to") || "DXB";
   const dateStr = searchParams.get("date") || "2026-06-04";
   const passengers = Number(searchParams.get("passengers")) || 1;
+  const cabinClass = searchParams.get("class") || "Business";
 
-  const flight = flightDetailDB[flightId] || flightDetailDB["AI-101"];
-  const aircraftInfo = aircraftData[flight.aircraft] || aircraftData["Airbus A350-900"];
+  // Backend Flight State
+  const [flightData, setFlightData] = useState<any | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const fareTotal = flight.price * passengers;
+  useEffect(() => {
+    const loadFlight = async () => {
+      try {
+        setIsLoading(true);
+        const data = await api.get<any>(`/flights/${flightId}`);
+        if (data) {
+          setFlightData(data);
+        }
+      } catch (err) {
+        console.error("Failed to load flight details from backend:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadFlight();
+  }, [flightId]);
+
+  // Fallback to static DB mapping if backend is loading/failed
+  const staticFlight = flightDetailDB[flightId] || flightDetailDB["AI-101"];
+  
+  const airlineObj = flightData?.airline && typeof flightData.airline === "object" ? flightData.airline : null;
+  const airlineName = airlineObj ? airlineObj.airlineName : (flightData?.airline || staticFlight.airline);
+  const logoUrl = airlineObj ? airlineObj.logoUrl : staticFlight.logo;
+  const brandColor = airlineObj ? (airlineObj.brandColor || "#D4AF37") : "#D4AF37";
+  const aircraft = flightData?.aircraft || staticFlight.aircraft;
+  const stops = flightData?.stops === 0 ? "Nonstop" : flightData?.stops ? `${flightData.stops} Stop` : staticFlight.stops;
+  
+  const selectedClassKey = ['economy', 'business', 'first'].includes(cabinClass.toLowerCase()) ? cabinClass.toLowerCase() : 'business';
+  const price = flightData?.price?.[selectedClassKey as 'economy' | 'business' | 'first'] || staticFlight.price || 1200;
+  
+  const fareTotal = price * passengers;
   const fboFee = 45 * passengers;
-  const taxes = Math.round(flight.price * 0.12 * passengers);
+  const taxes = Math.round(price * 0.12 * passengers);
   const totalDue = fareTotal + fboFee + taxes;
 
   const [activeTab, setActiveTab] = useState<"specs" | "baggage" | "fare" | "rules">("specs");
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    setImageError(!logoUrl);
+  }, [logoUrl]);
+
+  const aircraftInfo = aircraftData[aircraft] || aircraftData["Airbus A350-900"];
+
+  // Custom descriptions for seeded carriers
+  const getAirlineDescription = (name: string) => {
+    const n = name.toLowerCase();
+    if (n.includes("air india")) {
+      return "Air India is the premier full-service carrier of India. Under the stewardship of the Tata Group, it is transitioning into a world-class global airline with state-of-the-art passenger comfort and classic Maharaja hospitality.";
+    } else if (n.includes("indigo")) {
+      return "IndiGo is India's largest and most reliable low-fare carrier, recognized globally for its high standards of operational safety, on-time arrivals, and hassle-free transit experience.";
+    } else if (n.includes("emirates")) {
+      return "Emirates is the award-winning international airline of Dubai. It sets the benchmark for luxury long-haul air travel with its iconic double-decker A380s, private suites, and onboard shower spas.";
+    } else if (n.includes("qatar")) {
+      return "Qatar Airways is the state-owned airline of Qatar. It is highly regarded for its ultra-premium Qsuite business class configurations, 5-star service, and award-winning catering.";
+    } else if (n.includes("singapore")) {
+      return "Singapore Airlines is the flag carrier of Singapore. It stands as a symbol of elegance, consistency, and premium cabin design, regularly voted the world's best airline.";
+    } else if (n.includes("akasa")) {
+      return "Akasa Air is a fast-growing Indian airline offering green-conscious flight operations, comfortable seats, and fresh in-flight selections from Café Akasa.";
+    } else if (n.includes("vistara")) {
+      return "Vistara was a legendary full-service joint venture between Tata Sons and Singapore Airlines, establishing new heights in luxury dining and customer-first service.";
+    }
+    return "Official premium code-share partner of SkyLuxe Aviation, offering custom pre-check clearance and fast-track lounge privileges.";
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map(n => n[0])
+      .join("")
+      .substring(0, 2)
+      .toUpperCase();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex-grow flex flex-col items-center justify-center text-white min-h-[60vh]">
+        <div className="w-12 h-12 border-4 border-white/10 border-t-gold rounded-full animate-spin mb-4" />
+        <p className="text-sm font-mono text-platinum/50 uppercase tracking-widest">Loading flight details...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="relative z-10 flex-grow flex flex-col pt-32 pb-24 px-6 lg:px-16 max-w-5xl mx-auto w-full">
-      <Link href={`/flights/search?from=${fromCode}&to=${toCode}&date=${dateStr}`} className="text-platinum/50 hover:text-white transition-colors text-xs font-mono uppercase mb-8 flex items-center gap-2">
+      <Link href={`/flights/search?from=${fromCode}&to=${toCode}&date=${dateStr}&class=${cabinClass}`} className="text-platinum/50 hover:text-white transition-colors text-xs font-mono uppercase mb-8 flex items-center gap-2">
         ← Back to Search Manifests
       </Link>
 
@@ -125,21 +206,39 @@ function DetailsContent() {
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         className="glass-panel p-8 md:p-12 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden bg-onyx/85"
+        style={{ borderTop: `6px solid ${brandColor}` }}
       >
         <div className="absolute top-0 right-0 w-64 h-64 bg-gold/10 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/4 pointer-events-none" />
         
         {/* Flight Header */}
         <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-8 border-b border-white/5 pb-8">
-          <div>
-            <span className="px-3 py-1 rounded-full bg-gold/10 border border-gold/30 text-[10px] text-gold uppercase tracking-widest mb-3 inline-block font-mono">
-              {flight.name}
-            </span>
-            <h1 className="text-3xl md:text-5xl font-serif font-bold text-white mb-2">{flight.airline} {flightId}</h1>
-            <p className="text-platinum/50 text-sm">{flight.aircraft} • Scheduled Carrier</p>
+          <div className="flex gap-4 items-center">
+            {imageError ? (
+              <div 
+                className="w-16 h-16 rounded-2xl flex items-center justify-center font-bold text-white font-mono text-lg shadow-lg"
+                style={{ backgroundColor: brandColor }}
+              >
+                {getInitials(airlineName)}
+              </div>
+            ) : (
+              <img 
+                src={logoUrl} 
+                alt={airlineName} 
+                onError={() => setImageError(true)}
+                className="w-16 h-16 rounded-2xl object-contain bg-white/10 p-2 border border-white/10" 
+              />
+            )}
+            <div>
+              <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] text-platinum/70 uppercase tracking-widest mb-1.5 inline-block font-mono">
+                {cabinClass} Class Suitability
+              </span>
+              <h1 className="text-3xl md:text-4xl font-serif font-bold text-white mb-1">{airlineName} {flightId}</h1>
+              <p className="text-platinum/50 text-xs font-mono">{aircraft} • Scheduled Carrier</p>
+            </div>
           </div>
           <div className="text-right">
-            <span className="text-[10px] text-platinum/50 uppercase tracking-widest block mb-1 font-mono">Base Tariff</span>
-            <span className="text-4xl font-bold text-white font-serif">${flight.price}</span>
+            <span className="text-[10px] text-platinum/50 uppercase tracking-widest block mb-1 font-mono">Tariff / Passenger</span>
+            <span className="text-4xl font-bold text-white font-serif">{formatAmount(price)}</span>
           </div>
         </div>
 
@@ -153,7 +252,7 @@ function DetailsContent() {
           <div className="flex flex-col items-center">
             <Plane className="w-5 h-5 text-gold mb-1" />
             <div className="w-full border-t border-dashed border-white/20 relative my-2">
-              <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-onyx-light border border-white/5 px-3 py-0.5 rounded-full text-[9px] text-platinum/50 font-mono">{flight.stops}</span>
+              <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1c1c1e] border border-white/5 px-3 py-0.5 rounded-full text-[9px] text-platinum/50 font-mono">{stops}</span>
             </div>
             <p className="text-[10px] text-platinum/40 font-mono">Duration: 3h 30m</p>
           </div>
@@ -164,12 +263,10 @@ function DetailsContent() {
           </div>
         </div>
 
-        {/* Seat Availability Notification */}
-        <div className="mb-10 p-4 rounded-xl bg-gold/5 border border-gold/20 flex items-center gap-3 text-gold text-xs leading-relaxed font-light">
-          <Info className="w-5 h-5 shrink-0" />
-          <div>
-            <span className="font-bold">Premium Seat Availability Alert:</span> Only 3 vacant suites remain in First & Business cabins. Select seat layout on next page to lock your cabin coordinates.
-          </div>
+        {/* Airline Description */}
+        <div className="mb-10 p-6 rounded-2xl bg-white/[0.02] border border-white/5">
+          <h4 className="text-white font-serif font-bold text-sm mb-2">About The Carrier</h4>
+          <p className="text-platinum/60 text-xs leading-relaxed font-light">{getAirlineDescription(airlineName)}</p>
         </div>
 
         {/* Tab Selection */}
@@ -186,6 +283,7 @@ function DetailsContent() {
               className={`pb-4 px-6 font-mono text-xs uppercase tracking-wider border-b-2 font-bold transition-colors ${
                 activeTab === tab.id ? "border-gold text-gold" : "border-transparent text-platinum/50 hover:text-white"
               }`}
+              style={{ borderColor: activeTab === tab.id ? brandColor : "transparent", color: activeTab === tab.id ? brandColor : "" }}
             >
               {tab.label}
             </button>
@@ -232,20 +330,24 @@ function DetailsContent() {
                   <Luggage className="w-8 h-8 text-gold shrink-0" />
                   <div>
                     <h5 className="text-white font-bold text-sm">Checked Baggage Allowance</h5>
-                    <p className="text-platinum/50 text-xs mt-1 leading-relaxed">40kg (88lbs) per seat. Maximum of 3 pieces allowed. Priority red-tag handling included.</p>
+                    <p className="text-platinum/50 text-xs mt-1 leading-relaxed">
+                      {selectedClassKey === "first" ? "50kg (110lbs)" : selectedClassKey === "business" ? "40kg (88lbs)" : "25kg (55lbs)"} per seat. Priority tag delivery included.
+                    </p>
                   </div>
                 </div>
                 <div className="p-4 bg-white/5 rounded-2xl border border-white/5 flex gap-4">
                   <Luggage className="w-8 h-8 text-gold shrink-0" />
                   <div>
                     <h5 className="text-white font-bold text-sm">Cabin Baggage Allowance</h5>
-                    <p className="text-platinum/50 text-xs mt-1 leading-relaxed">12kg (26lbs) cabin carry-on plus 1 laptop sleeve or premium handbag.</p>
+                    <p className="text-platinum/50 text-xs mt-1 leading-relaxed">
+                      {selectedClassKey === "first" ? "2 pieces up to 15kg" : selectedClassKey === "business" ? "2 pieces up to 12kg" : "1 piece up to 8kg"} cabin carry-on plus handbag.
+                    </p>
                   </div>
                 </div>
               </div>
               <div className="p-4 bg-white/5 rounded-xl border border-white/5 text-xs text-platinum/60 font-light flex items-center gap-2">
                 <Shield className="w-4 h-4 text-gold shrink-0" />
-                Sovereign baggage clearances are pre-routed through private terminal scanners to bypass standard queues.
+                All checked assets are cleared through VIP security screening automatically.
               </div>
             </motion.div>
           )}
@@ -256,19 +358,19 @@ function DetailsContent() {
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between border-b border-white/5 pb-2">
                   <span className="text-platinum/50">Base Fare ({passengers} Passenger(s))</span>
-                  <span className="text-white font-mono">${fareTotal.toLocaleString()}</span>
+                  <span className="text-white font-mono">{formatAmount(fareTotal)}</span>
                 </div>
                 <div className="flex justify-between border-b border-white/5 pb-2">
                   <span className="text-platinum/50">FBO Fast-Track Clearance Surcharges</span>
-                  <span className="text-white font-mono">${fboFee.toLocaleString()}</span>
+                  <span className="text-white font-mono">{formatAmount(fboFee)}</span>
                 </div>
                 <div className="flex justify-between border-b border-white/5 pb-2">
                   <span className="text-platinum/50">Aeronautical Taxes & Duties (12%)</span>
-                  <span className="text-white font-mono">${taxes.toLocaleString()}</span>
+                  <span className="text-white font-mono">{formatAmount(taxes)}</span>
                 </div>
                 <div className="flex justify-between pt-2 text-md font-bold">
                   <span className="text-white font-serif">Total Settlement Due</span>
-                  <span className="text-gold font-mono">${totalDue.toLocaleString()}</span>
+                  <span className="text-gold font-mono">{formatAmount(totalDue)}</span>
                 </div>
               </div>
             </motion.div>
@@ -280,14 +382,14 @@ function DetailsContent() {
                 <AlertTriangle className="w-5 h-5 text-gold shrink-0 mt-0.5" />
                 <div>
                   <h5 className="text-white font-bold text-sm mb-1">Cancellation Protocols</h5>
-                  <p className="text-xs">Cancellations executed at least 24 hours prior to scheduled departure time are subject to a flat fee of $100. Inside 24 hours, bookings are non-refundable.</p>
+                  <p className="text-xs">Cancellations executed at least 24 hours prior to scheduled departure time are subject to a flat fee of {formatAmount(100)}. Inside 24 hours, bookings are non-refundable.</p>
                 </div>
               </div>
               <div className="flex gap-3 items-start p-4 bg-white/5 rounded-2xl border border-white/5">
                 <Clock className="w-5 h-5 text-gold shrink-0 mt-0.5" />
                 <div>
                   <h5 className="text-white font-bold text-sm mb-1">Flight Change Policies</h5>
-                  <p className="text-xs">Schedule adjustments are permitted up to 12 hours before takeoff. Flight modifications incur a difference in fare plus an administrative charge of $50.</p>
+                  <p className="text-xs">Schedule adjustments are permitted up to 12 hours before takeoff. Flight modifications incur a difference in fare plus an administrative charge of {formatAmount(50)}.</p>
                 </div>
               </div>
             </motion.div>
@@ -304,8 +406,10 @@ function DetailsContent() {
                   <Coffee className="w-5 h-5 text-gold" />
                 </div>
                 <div>
-                  <h4 className="text-platinum/50 text-[10px] uppercase tracking-widest font-mono">Gastronomy</h4>
-                  <p className="text-white text-sm font-medium mt-0.5">{flight.meal}</p>
+                  <h4 className="text-platinum/50 text-[10px] uppercase tracking-widest font-mono">Meal Information</h4>
+                  <p className="text-white text-sm font-medium mt-0.5">
+                    {selectedClassKey === "first" ? "Premium 5-Course Caviar Menu" : selectedClassKey === "business" ? "Michelin-Inspired A La Carte" : "Gourmet Hot Meal Selection"}
+                  </p>
                 </div>
               </div>
               <div className="flex gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/5">
@@ -313,14 +417,16 @@ function DetailsContent() {
                   <Wifi className="w-5 h-5 text-gold" />
                 </div>
                 <div>
-                  <h4 className="text-platinum/50 text-[10px] uppercase tracking-widest font-mono">Connectivity</h4>
-                  <p className="text-white text-sm font-medium mt-0.5">{flight.wifi}</p>
+                  <h4 className="text-platinum/50 text-[10px] uppercase tracking-widest font-mono">Cabin Amenities</h4>
+                  <p className="text-white text-sm font-medium mt-0.5">
+                    {selectedClassKey === "first" ? "High-Speed Wi-Fi • Bulgari Amenity Kit • Flatbed" : selectedClassKey === "business" ? "Complimentary Wi-Fi • Executive Kit" : "In-flight Entertainment Console"}
+                  </p>
                 </div>
               </div>
             </div>
           </div>
           <div>
-            <h3 className="text-lg font-serif font-medium text-white mb-4">Ground Logistics</h3>
+            <h3 className="text-lg font-serif font-medium text-white mb-4">Ground Logistics & Loyalty</h3>
             <div className="space-y-4">
               <div className="flex gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/5">
                 <div className="w-10 h-10 rounded-lg bg-gold/10 border border-gold/20 flex items-center justify-center shrink-0">
@@ -328,16 +434,22 @@ function DetailsContent() {
                 </div>
                 <div>
                   <h4 className="text-platinum/50 text-[10px] uppercase tracking-widest font-mono">Airport Lounge</h4>
-                  <p className="text-white text-sm font-medium mt-0.5">{flight.lounge}</p>
+                  <p className="text-white text-sm font-medium mt-0.5">
+                    {selectedClassKey === "first" ? `${airlineName} First Class Sovereign Lounge` : selectedClassKey === "business" ? `${airlineName} Business Lounge Access` : "Standard Lounge Entry (Chargeable)"}
+                  </p>
                 </div>
               </div>
               <div className="flex gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/5">
                 <div className="w-10 h-10 rounded-lg bg-gold/10 border border-gold/20 flex items-center justify-center shrink-0">
-                  <ShieldCheck className="w-5 h-5 text-gold" />
+                  <Star className="w-5 h-5 text-gold" />
                 </div>
                 <div>
-                  <h4 className="text-platinum/50 text-[10px] uppercase tracking-widest font-mono">Clearance queues</h4>
-                  <p className="text-white text-sm font-medium mt-0.5">Priority terminal fast-track included</p>
+                  <h4 className="text-platinum/50 text-[10px] uppercase tracking-widest font-mono">Loyalty Program</h4>
+                  <p className="text-white text-sm font-medium mt-0.5">
+                    {airlineObj?.alliance && airlineObj.alliance !== "None" 
+                      ? `${airlineObj.alliance} Points & SkyCoins credited` 
+                      : `${airlineName} Member Miles Registry`}
+                  </p>
                 </div>
               </div>
             </div>
@@ -345,8 +457,11 @@ function DetailsContent() {
         </div>
 
         {/* Action Button */}
-        <Link href={`/flights/${flightId}/seats?from=${fromCode}&to=${toCode}&date=${dateStr}&passengers=${passengers}`} className="block w-full">
-          <button className="w-full py-4 rounded-xl bg-gradient-to-r from-gold to-gold-light text-onyx font-bold text-lg hover:-translate-y-1 transition-transform shadow-[0_0_25px_rgba(212,175,55,0.3)] flex items-center justify-center gap-2">
+        <Link href={`/flights/${flightId}/seats?from=${fromCode}&to=${toCode}&date=${dateStr}&passengers=${passengers}&class=${cabinClass}`} className="block w-full">
+          <button 
+            className="w-full py-4 rounded-xl text-onyx font-bold text-lg hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2"
+            style={{ backgroundColor: brandColor, boxShadow: `0 0 25px ${brandColor}40` }}
+          >
             Select Your Suite & Seat <ArrowRight className="w-5 h-5" />
           </button>
         </Link>

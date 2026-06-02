@@ -7,7 +7,8 @@ const flightSchema = new mongoose.Schema({
     unique: true
   },
   airline: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Airline',
     required: true
   },
   aircraft: {
@@ -91,5 +92,20 @@ const flightSchema = new mongoose.Schema({
 
 
 flightSchema.index({ 'departure.time': 1, 'departure.airport': 1, 'arrival.airport': 1 });
+
+flightSchema.set('toJSON', {
+  virtuals: true,
+  transform: (doc, ret) => {
+    ret.id = ret._id;
+    ret.airline_code = ret.airline && ret.airline.iataCode ? ret.airline.iataCode : 'AI';
+    ret.airline_name = ret.airline && ret.airline.airlineName ? ret.airline.airlineName : (typeof ret.airline === 'string' ? ret.airline : 'Air India');
+    ret.aircraft_id = ret.aircraft;
+    ret.departure_time = ret.departure?.time;
+    ret.arrival_time = ret.arrival?.time;
+    ret.origin = ret.departure?.airport;
+    ret.destination = ret.arrival?.airport;
+    return ret;
+  }
+});
 
 module.exports = mongoose.model('Flight', flightSchema); 

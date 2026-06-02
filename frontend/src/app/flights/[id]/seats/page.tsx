@@ -6,6 +6,7 @@ import { ArrowRight, Check, Compass, Users, Info, ShieldAlert } from "lucide-rea
 import Link from "next/link";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
+import { useSkyLuxeStore } from "@/store/skyluxeStore";
 
 const seatTypes = {
   first: { label: "First Class Suite", surcharge: 150, color: "bg-amber-500/20 border-amber-500/40 text-amber-300 hover:bg-amber-500/30" },
@@ -46,6 +47,7 @@ function SeatsContent() {
   const dateStr = searchParams.get("date") || "2026-06-04";
   const passengers = Number(searchParams.get("passengers")) || 1;
 
+  const { currency, formatAmount } = useSkyLuxeStore();
   const basePrice = flightId === "EK-505" ? 780 : flightId === "UK-202" ? 420 : flightId === "AI-101" ? 350 : 180;
   const [selectedSeat, setSelectedSeat] = useState<string | null>(null);
   const [surcharge, setSurcharge] = useState(0);
@@ -64,7 +66,8 @@ function SeatsContent() {
     setSeatLabel(config.label + (isEmergency ? " (Emergency Exit)" : ""));
   };
 
-  const totalPrice = (basePrice + surcharge) * passengers;
+  // Base price + dynamic 15% taxes + dynamic seat surcharge
+  const totalPrice = (basePrice + Math.round(basePrice * 0.15) + surcharge) * passengers;
 
   const handleConfirm = () => {
     if (!selectedSeat) return;
@@ -87,72 +90,159 @@ function SeatsContent() {
           <div className="w-full max-w-md border border-white/10 bg-black/60 rounded-3xl p-8 relative overflow-hidden flex flex-col gap-6">
             <div className="absolute top-0 left-0 right-0 h-4 bg-white/5 border-b border-white/10 text-[8px] tracking-widest text-center text-platinum/30 pt-1 font-mono uppercase">Cockpit / Flight Deck</div>
             
-            <div className="h-6" />
+            <div className="h-4" />
 
-            {cabinLayout.map((rowLayout) => (
-              <div key={rowLayout.row} className="flex justify-between gap-4 items-center">
-                <span className="text-[10px] font-mono text-platinum/30 w-4 text-center">{rowLayout.row}</span>
-                
-                <div className="flex-1 grid grid-cols-6 gap-2 relative">
-                  {/* Emergency exit visual indicators */}
-                  {rowLayout.isEmergency && (
-                    <div className="absolute inset-y-0 -left-6 -right-6 border-t border-b border-dashed border-red-500/30 bg-red-500/5 pointer-events-none flex items-center justify-between px-2">
-                      <span className="text-[7px] text-red-400 font-mono tracking-widest uppercase">EXIT</span>
-                      <span className="text-[7px] text-red-400 font-mono tracking-widest uppercase">EXIT</span>
-                    </div>
-                  )}
+            {/* Lavatory header block */}
+            <div className="flex justify-center items-center gap-6 border-b border-white/5 pb-4 mb-2 text-platinum/40 text-xs font-mono">
+              <div className="flex items-center gap-2 px-3 py-1 rounded bg-white/5 border border-white/10">
+                <span>🚻 LAVATORY</span>
+              </div>
+            </div>
 
-                  {rowLayout.seats.map((seat) => {
-                    const isTaken = takenSeats.includes(seat);
-                    const isSelected = selectedSeat === seat;
-                    // @ts-ignore
-                    const typeConfig = seatTypes[rowLayout.type];
-                    
-                    return (
-                      <button
-                        key={seat}
-                        disabled={isTaken}
-                        onClick={() => handleSeatClick(seat, rowLayout.type, !!rowLayout.isEmergency)}
-                        className={`aspect-square rounded-lg border text-[10px] font-mono font-bold flex items-center justify-center transition-all ${
-                          isTaken 
-                            ? "bg-white/5 border-white/5 text-platinum/20 cursor-not-allowed" 
-                            : isSelected 
-                              ? "bg-gold border-gold text-onyx shadow-[0_0_12px_rgba(212,175,55,0.7)]" 
-                              : typeConfig.color
-                        }`}
-                      >
-                        {seat}
-                      </button>
-                    );
-                  })}
+            {/* Column Headers */}
+            <div className="flex justify-between items-center text-[10px] font-mono text-platinum/40 px-4 mb-2">
+              <span className="w-4 text-center">Row</span>
+              <div className="flex-1 flex justify-between gap-6">
+                <div className="grid grid-cols-3 gap-2 flex-grow text-center">
+                  <span>A</span>
+                  <span>B</span>
+                  <span>C</span>
+                </div>
+                <div className="w-4 shrink-0" />
+                <div className="grid grid-cols-3 gap-2 flex-grow text-center">
+                  <span>D</span>
+                  <span>E</span>
+                  <span>F</span>
                 </div>
               </div>
-            ))}
+            </div>
+
+            {cabinLayout.map((rowLayout) => {
+              // Split seats into left and right halves
+              let leftSeats: (string | null)[] = [];
+              let rightSeats: (string | null)[] = [];
+
+              if (rowLayout.seats.length === 6) {
+                leftSeats = rowLayout.seats.slice(0, 3);
+                rightSeats = rowLayout.seats.slice(3, 6);
+              } else if (rowLayout.seats.length === 4) {
+                leftSeats = [rowLayout.seats[0], rowLayout.seats[1], null];
+                rightSeats = [null, rowLayout.seats[2], rowLayout.seats[3]];
+              }
+
+              return (
+                <div key={rowLayout.row} className="flex justify-between gap-4 items-center">
+                  <span className="text-[10px] font-mono text-platinum/30 w-4 text-center">{rowLayout.row}</span>
+                  
+                  <div className="flex-1 flex justify-between gap-6 relative">
+                    {/* Emergency exit visual indicators */}
+                    {rowLayout.isEmergency && (
+                      <div className="absolute inset-y-0 -left-6 -right-6 border-t border-b border-dashed border-red-500/30 bg-red-500/5 pointer-events-none flex items-center justify-between px-2 z-10">
+                        <span className="text-[7px] text-red-400 font-mono tracking-widest uppercase">«« EXIT</span>
+                        <span className="text-[7px] text-red-400 font-mono tracking-widest uppercase">EXIT »»</span>
+                      </div>
+                    )}
+
+                    {/* Left Cabin Grid */}
+                    <div className="grid grid-cols-3 gap-2 flex-grow">
+                      {leftSeats.map((seat, idx) => {
+                        if (!seat) return <div key={`empty-left-${idx}`} className="w-8 h-8 opacity-0 pointer-events-none" />;
+                        const isTaken = takenSeats.includes(seat);
+                        const isSelected = selectedSeat === seat;
+                        // @ts-ignore
+                        const typeConfig = seatTypes[rowLayout.type];
+                        
+                        return (
+                          <button
+                            key={seat}
+                            disabled={isTaken}
+                            onClick={() => handleSeatClick(seat, rowLayout.type, !!rowLayout.isEmergency)}
+                            className={`aspect-square rounded-lg border text-[10px] font-mono font-bold flex items-center justify-center transition-all ${
+                              isTaken 
+                                ? "bg-white/5 border-white/5 text-platinum/20 cursor-not-allowed" 
+                                : isSelected 
+                                  ? "bg-green-500 border-green-500 text-white shadow-[0_0_12px_rgba(34,197,94,0.7)]" 
+                                  : typeConfig.color
+                            }`}
+                          >
+                            {isSelected ? <Check className="w-3.5 h-3.5 text-white" /> : seat}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Aisle */}
+                    <div className="w-4 shrink-0 flex items-center justify-center text-[7px] font-mono text-platinum/20 rotate-90 uppercase tracking-widest">
+                      Aisle
+                    </div>
+
+                    {/* Right Cabin Grid */}
+                    <div className="grid grid-cols-3 gap-2 flex-grow">
+                      {rightSeats.map((seat, idx) => {
+                        if (!seat) return <div key={`empty-right-${idx}`} className="w-8 h-8 opacity-0 pointer-events-none" />;
+                        const isTaken = takenSeats.includes(seat);
+                        const isSelected = selectedSeat === seat;
+                        // @ts-ignore
+                        const typeConfig = seatTypes[rowLayout.type];
+                        
+                        return (
+                          <button
+                            key={seat}
+                            disabled={isTaken}
+                            onClick={() => handleSeatClick(seat, rowLayout.type, !!rowLayout.isEmergency)}
+                            className={`aspect-square rounded-lg border text-[10px] font-mono font-bold flex items-center justify-center transition-all ${
+                              isTaken 
+                                ? "bg-white/5 border-white/5 text-platinum/20 cursor-not-allowed" 
+                                : isSelected 
+                                  ? "bg-green-500 border-green-500 text-white shadow-[0_0_12px_rgba(34,197,94,0.7)]" 
+                                  : typeConfig.color
+                            }`}
+                          >
+                            {isSelected ? <Check className="w-3.5 h-3.5 text-white" /> : seat}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                  </div>
+                </div>
+              );
+            })}
             
             <div className="h-4" />
           </div>
 
           {/* Seat Legends */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-8 w-full border-t border-white/5 pt-6 text-center">
-            <div className="flex items-center justify-center gap-2">
-              <span className="w-3.5 h-3.5 rounded bg-amber-500/20 border border-amber-500/40" />
-              <span className="text-[10px] font-mono text-platinum/60">First Class Suite</span>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 w-full border-t border-white/5 pt-6 text-left">
+            <div className="flex items-center gap-2.5">
+              <span className="w-4 h-4 rounded bg-amber-500/20 border border-amber-500/40" />
+              <span className="text-[11px] font-mono text-platinum/60">First Class Suite</span>
             </div>
-            <div className="flex items-center justify-center gap-2">
-              <span className="w-3.5 h-3.5 rounded bg-blue-600/20 border border-blue-400/40" />
-              <span className="text-[10px] font-mono text-platinum/60">Business Flatbed</span>
+            <div className="flex items-center gap-2.5">
+              <span className="w-4 h-4 rounded bg-blue-600/20 border border-blue-400/40" />
+              <span className="text-[11px] font-mono text-platinum/60">Business Flatbed</span>
             </div>
-            <div className="flex items-center justify-center gap-2">
-              <span className="w-3.5 h-3.5 rounded bg-purple-600/20 border border-purple-400/40" />
-              <span className="text-[10px] font-mono text-platinum/60">Premium Exit</span>
+            <div className="flex items-center gap-2.5">
+              <span className="w-4 h-4 rounded bg-white/10 border border-white/20" />
+              <span className="text-[11px] font-mono text-platinum/60">Economy Cabin</span>
             </div>
-            <div className="flex items-center justify-center gap-2">
-              <span className="w-3.5 h-3.5 rounded bg-white/10 border border-white/20" />
-              <span className="text-[10px] font-mono text-platinum/60">Economy Cabin</span>
+            <div className="flex items-center gap-2.5">
+              <span className="w-4 h-4 rounded bg-white/5 border-white/5 text-platinum/20" />
+              <span className="text-[11px] font-mono text-platinum/60">Occupied Seat</span>
             </div>
-            <div className="flex items-center justify-center gap-2">
-              <span className="w-3.5 h-3.5 rounded bg-white/5 border-white/5" />
-              <span className="text-[10px] font-mono text-platinum/30">Occupied Seat</span>
+            <div className="flex items-center gap-2.5">
+              <span className="w-4 h-4 rounded bg-green-500 border border-green-500 flex items-center justify-center">
+                <Check className="w-2.5 h-2.5 text-white" />
+              </span>
+              <span className="text-[11px] font-mono text-platinum/60">Assigned Seat</span>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <span className="text-red-400 text-xs font-mono font-bold">«« Exit Row</span>
+              <span className="text-[11px] font-mono text-platinum/60">Emergency Exit</span>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <span className="text-platinum/50 text-xs font-mono">🚻 W.C.</span>
+              <span className="text-[11px] font-mono text-platinum/60">Lavatory</span>
             </div>
           </div>
         </div>
@@ -179,22 +269,40 @@ function SeatsContent() {
                 <span className="text-platinum/60">Passenger count</span>
                 <span className="text-white font-medium font-mono">{passengers} Seat(s)</span>
               </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-platinum/60">Position coordinate</span>
-                <span className={`font-bold font-mono ${selectedSeat ? "text-gold" : "text-platinum/40"}`}>
-                  {selectedSeat || "Select seat"}
-                </span>
-              </div>
-              {selectedSeat && (
+
+              <div className="w-full h-px bg-white/10 my-4" />
+
+              {/* Price Summary Breakdown */}
+              <h4 className="text-xs uppercase tracking-widest text-gold font-semibold mb-3 font-mono">Price Summary</h4>
+              <div className="space-y-2 mb-6">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-platinum/40 font-mono">Seat category</span>
-                  <span className="text-white font-light">{seatLabel}</span>
+                  <span className="text-platinum/60">Base Ticket Fare</span>
+                  <span className="text-white font-mono">{formatAmount(basePrice * passengers)}</span>
                 </div>
-              )}
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-platinum/60">Aviation Taxes & Port Fees</span>
+                  <span className="text-white font-mono">{formatAmount(Math.round(basePrice * 0.15) * passengers)}</span>
+                </div>
+                {selectedSeat && (
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-platinum/60">Seat Allocation ({selectedSeat})</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-white font-mono">{formatAmount(surcharge * passengers)}</span>
+                      <button 
+                        onClick={() => { setSelectedSeat(null); setSurcharge(0); setSeatLabel(""); }}
+                        className="text-red-400 hover:text-red-300 transition-colors underline text-[10px] font-mono"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="w-full h-px bg-white/10 my-4" />
               <div className="flex justify-between items-end">
                 <span className="text-platinum/80 text-sm">Total Settlement</span>
-                <span className="text-3xl font-bold text-white font-serif">${totalPrice}</span>
+                <span className="text-3xl font-bold text-white font-serif">{formatAmount(totalPrice)}</span>
               </div>
             </div>
 
@@ -203,7 +311,7 @@ function SeatsContent() {
               disabled={!selectedSeat}
               className="w-full py-4 rounded-xl bg-gold hover:bg-gold-light text-onyx font-bold text-lg hover:-translate-y-0.5 transition-all shadow-[0_0_20px_rgba(212,175,55,0.3)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              Confirm & Pay <ArrowRight className="w-5 h-5" />
+              Confirm & Continue <ArrowRight className="w-5 h-5" />
             </button>
           </div>
           

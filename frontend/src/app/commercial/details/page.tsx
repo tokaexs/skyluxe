@@ -6,6 +6,7 @@ import { ArrowRight, Plane, Shield, ShieldCheck, Heart, Coffee, Wifi, Luggage, S
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
+import { useSkyLuxeStore } from "@/store/skyluxeStore";
 
 const flightDetailDB: Record<string, any> = {
   "AI-101": { airline: "Air India", name: "Maharaja Business Suite", aircraft: "Airbus A350-900", price: 350, meal: "Indian Heritage Tasting Menu", lounge: "BOM Lounge Prime", wifi: "High-Speed complimentary" },
@@ -18,6 +19,7 @@ const flightDetailDB: Record<string, any> = {
 function DetailsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { currency, formatAmount } = useSkyLuxeStore();
   const flightId = searchParams.get("flightId") || "AI-101";
   const fromCode = searchParams.get("from") || "BOM";
   const toCode = searchParams.get("to") || "DXB";
@@ -49,7 +51,7 @@ function DetailsContent() {
           </div>
           <div className="text-right">
             <span className="text-[10px] text-platinum/50 uppercase tracking-widest block mb-1">Base Tariff</span>
-            <span className="text-4xl font-bold text-white">${flight.price}</span>
+            <span className="text-4xl font-bold text-white">{formatAmount(flight.price)}</span>
           </div>
         </div>
 

@@ -7,12 +7,12 @@ import Link from "next/link";
 import { useSkyLuxeStore, FlightBooking } from "@/store/skyluxeStore";
 
 export default function MyFlights() {
-  const { flights } = useSkyLuxeStore();
-  const [activeModal, setActiveModal] = useState<"tracking" | "boardingPass" | "cabin3d" | "history" | null>(null);
+  const { flights, profile, formatAmount, cancelBooking } = useSkyLuxeStore();
+  const [activeModal, setActiveModal] = useState<"tracking" | "boardingPass" | "cabin3d" | "history" | "cancellation" | null>(null);
   const [selectedFlight, setSelectedFlight] = useState<FlightBooking | null>(null);
 
   // Group flights into Upcoming (Confirmed) and History (Completed)
-  const upcomingFlights = flights.filter(f => f.status === "Confirmed" || f.status === "Pending");
+  const upcomingFlights = flights.filter(f => f.status === "Confirmed" || f.status === "Pending" || f.status === "Cancelled");
   const pastFlights = flights.filter(f => f.status === "Completed");
 
   const openModal = (type: "tracking" | "boardingPass" | "cabin3d" | "history", flight: FlightBooking) => {
@@ -57,9 +57,15 @@ export default function MyFlights() {
                 
                 <div className="relative z-10 p-8 border-b border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                   <div>
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-gold/30 bg-gold/10 mb-4">
-                      <span className="w-2 h-2 rounded-full bg-gold animate-pulse" />
-                      <span className="text-gold text-[9px] font-bold tracking-widest uppercase font-mono">Confirmed Mission</span>
+                    <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full mb-4 ${
+                      flight.status === "Cancelled" 
+                        ? "border-red-500/30 bg-red-500/10 text-red-400"
+                        : "border-gold/30 bg-gold/10 text-gold"
+                    }`}>
+                      <span className={`w-2 h-2 rounded-full ${flight.status === "Cancelled" ? "bg-red-500" : "bg-gold animate-pulse"}`} />
+                      <span className="text-[9px] font-bold tracking-widest uppercase font-mono">
+                        {flight.status === "Cancelled" ? "Cancelled Mission" : "Confirmed Mission"}
+                      </span>
                     </div>
                     <h2 className="text-2xl font-serif font-bold text-white">{flight.departure.city} ({flight.departure.code}) to {flight.arrival.city} ({flight.arrival.code})</h2>
                     <p className="text-platinum/60 text-sm font-light mt-1 flex items-center gap-2 font-mono">
@@ -67,18 +73,30 @@ export default function MyFlights() {
                     </p>
                   </div>
                   <div className="flex gap-3">
-                    <button 
-                      onClick={() => openModal("tracking", flight)}
-                      className="px-5 py-2.5 rounded-xl border border-white/20 text-white hover:bg-white/5 transition-colors text-sm flex items-center gap-2"
-                    >
-                      <Map className="w-4 h-4 text-gold" /> Track Flight
-                    </button>
-                    <button 
-                      onClick={() => openModal("boardingPass", flight)}
-                      className="px-5 py-2.5 rounded-xl bg-white text-onyx font-bold hover:bg-platinum transition-colors text-sm flex items-center gap-2"
-                    >
-                      <Download className="w-4 h-4" /> Boarding Pass
-                    </button>
+                    {flight.status !== "Cancelled" && (
+                      <button 
+                        onClick={() => openModal("tracking", flight)}
+                        className="px-5 py-2.5 rounded-xl border border-white/20 text-white hover:bg-white/5 transition-colors text-sm flex items-center gap-2"
+                      >
+                        <Map className="w-4 h-4 text-gold" /> Track Flight
+                      </button>
+                    )}
+                    {flight.status !== "Cancelled" && (
+                      <button 
+                        onClick={() => openModal("boardingPass", flight)}
+                        className="px-5 py-2.5 rounded-xl bg-white text-onyx font-bold hover:bg-platinum transition-colors text-sm flex items-center gap-2"
+                      >
+                        <Download className="w-4 h-4" /> Boarding Pass
+                      </button>
+                    )}
+                    {flight.status !== "Cancelled" && (
+                      <button 
+                        onClick={() => openModal("cancellation", flight)}
+                        className="px-5 py-2.5 rounded-xl border border-red-500/20 text-red-400 hover:bg-red-500/10 hover:border-red-500/40 transition-colors text-sm flex items-center gap-2"
+                      >
+                        <X className="w-4 h-4 text-red-400" /> Cancel Booking
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -342,6 +360,142 @@ export default function MyFlights() {
                 </button>
               </motion.div>
             )}
+
+            {/* 5. CANCELLATION MODAL */}
+            {activeModal === "cancellation" && (() => {
+              const tier = (profile?.membership || "none").toLowerCase().replace(" ", "_");
+              const isPrivate = selectedFlight.type === "private";
+              
+              // Calculate hours diff
+              const departureDate = new Date(selectedFlight.date + "T" + (selectedFlight.departure.time || "09:00"));
+              const timeDiff = departureDate.getTime() - Date.now();
+              const hoursDiff = timeDiff / (1000 * 3600);
+              const isRefundable = hoursDiff >= 24;
+              
+              // Calculate fees in USD
+              let cancellationFee = 0;
+              if (isRefundable) {
+                if (isPrivate) {
+                  if (tier === "black_elite") cancellationFee = 0;
+                  else if (tier === "executive") cancellationFee = 250;
+                  else cancellationFee = 500;
+                } else {
+                  if (tier === "black_elite") cancellationFee = 0;
+                  else if (tier === "executive") cancellationFee = 50;
+                  else cancellationFee = 100;
+                }
+              } else {
+                cancellationFee = selectedFlight.cost;
+              }
+              
+              const refundAmount = Math.max(0, selectedFlight.cost - cancellationFee);
+              
+              return (
+                <motion.div 
+                  initial={{ scale: 0.95, opacity: 0, y: 20 }} 
+                  animate={{ scale: 1, opacity: 1, y: 0 }} 
+                  exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                  className="relative z-10 w-full max-w-lg glass-panel border border-red-500/30 rounded-3xl overflow-hidden shadow-2xl p-8 bg-onyx"
+                >
+                  <div className="flex justify-between items-start mb-6 border-b border-white/10 pb-4">
+                    <div>
+                      <h3 className="text-xl font-serif font-bold text-white mb-1">Cancel Booking Mission</h3>
+                      <p className="text-platinum/50 text-xs font-mono">Reference: {selectedFlight.id}</p>
+                    </div>
+                    <button onClick={() => setActiveModal(null)} className="p-2 bg-white/5 rounded-full hover:bg-white/10 text-white transition-colors">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-4 mb-6">
+                    <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-2">
+                      <div className="flex justify-between text-xs text-platinum/50">
+                        <span>Route</span>
+                        <span className="text-white font-medium">{selectedFlight.departure.city} → {selectedFlight.arrival.city}</span>
+                      </div>
+                      <div className="flex justify-between text-xs text-platinum/50">
+                        <span>Departure Time</span>
+                        <span className="text-white font-medium">{selectedFlight.date} • {selectedFlight.departure.time}</span>
+                      </div>
+                      <div className="flex justify-between text-xs text-platinum/50">
+                        <span>Aircraft Class</span>
+                        <span className="text-white font-medium">{selectedFlight.aircraft}</span>
+                      </div>
+                    </div>
+
+                    <div className="p-4 rounded-2xl border border-white/5 space-y-3">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-platinum/60">Original Fare</span>
+                        <span className="text-white font-medium font-mono">{formatAmount(selectedFlight.cost)}</span>
+                      </div>
+                      
+                      <div className="flex justify-between text-sm">
+                        <span className="text-platinum/60 flex items-center gap-1.5">
+                          Cancellation Penalty
+                          {!isRefundable && <span className="text-red-400 text-[10px] font-mono">(Departure &lt; 24h)</span>}
+                        </span>
+                        <span className="text-red-400 font-medium font-mono">-{formatAmount(cancellationFee)}</span>
+                      </div>
+                      
+                      <div className="border-t border-white/10 pt-3 flex justify-between items-end">
+                        <span className="text-white font-medium text-sm">Estimated Refund</span>
+                        <span className="text-2xl font-bold text-gold font-mono">{formatAmount(refundAmount)}</span>
+                      </div>
+                    </div>
+
+                    {/* Tier Benefits Notification */}
+                    {isRefundable ? (
+                      <div className={`p-4 rounded-xl border text-xs leading-relaxed ${
+                        tier === "black_elite" 
+                          ? "border-gold/30 bg-gold/5 text-gold"
+                          : tier === "executive"
+                            ? "border-gold/20 bg-gold/5 text-gold/90"
+                            : "border-white/15 bg-white/5 text-platinum/70"
+                      }`}>
+                        {tier === "black_elite" && (
+                          <p>✦ <strong>Black Elite Privilege:</strong> Enjoy $0 fee cancellations on all flights. The full booking cost is refunded to your wallet.</p>
+                        )}
+                        {tier === "executive" && (
+                          <p>✦ <strong>Executive Privilege:</strong> Reduced cancellation fee applied. Silver members pay double for cancellations.</p>
+                        )}
+                        {tier === "silver" && (
+                          <p>✦ <strong>Silver Tier:</strong> Standard cancellation fee applied. Upgrade to Executive or Black Elite for reduced or waived fees.</p>
+                        )}
+                        {tier === "none" && (
+                          <p>✦ Upgrade to a SkyLuxe Club membership tier to unlock waived cancellation fees and higher points multipliers.</p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="p-4 rounded-xl border border-red-500/20 bg-red-500/5 text-red-400/90 text-xs leading-relaxed font-light">
+                        ⚠️ <strong>Non-Refundable Window:</strong> Flights cancelled less than 24 hours prior to departure do not qualify for FBO wallet refund credits.
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-4">
+                    <button 
+                      onClick={() => setActiveModal(null)}
+                      className="flex-1 py-3 rounded-xl border border-white/20 text-white hover:bg-white/5 transition-colors font-medium text-sm"
+                    >
+                      Keep Booking
+                    </button>
+                    <button 
+                      onClick={async () => {
+                        const success = await cancelBooking(selectedFlight.id);
+                        if (success) {
+                          setActiveModal(null);
+                        } else {
+                          alert("Failed to process flight cancellation. Please contact support.");
+                        }
+                      }}
+                      className="flex-1 py-3 rounded-xl bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 transition-colors font-bold text-sm shadow-[0_0_20px_rgba(239,68,68,0.2)]"
+                    >
+                      Confirm Cancellation
+                    </button>
+                  </div>
+                </motion.div>
+              );
+            })()}
 
           </motion.div>
         )}

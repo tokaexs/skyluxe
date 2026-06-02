@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Plane, LayoutDashboard, ShieldCheck, Wallet, User, Bell, LogOut, Gift, Star, Map, Navigation, Sparkles, Activity } from "lucide-react";
+import { Plane, LayoutDashboard, ShieldCheck, Wallet, User, Bell, LogOut, Gift, Star, Map, Navigation, Sparkles, Activity, Award, Home as HomeIcon } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useSkyLuxeStore } from "@/store/skyluxeStore";
 import { useEffect } from "react";
@@ -10,22 +10,25 @@ import { useEffect } from "react";
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { logout } = useAuth();
-  const { notifications, fetchInitialData } = useSkyLuxeStore();
+  const { notifications, fetchInitialData, profile, currency, setCurrency } = useSkyLuxeStore();
   
   useEffect(() => {
-    fetchInitialData();
+    if (fetchInitialData) {
+      fetchInitialData();
+    }
   }, [fetchInitialData]);
 
   const unreadNotifCount = notifications.filter(n => n.unread).length;
 
-
   const links = [
+    { name: "Home", href: "/?landing=true", icon: HomeIcon },
     { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
     { name: "My Flights", href: "/dashboard/flights", icon: Plane },
     { name: "Upcoming Trips", href: "/dashboard/trips", icon: Map },
     { name: "Wallet & Billing", href: "/dashboard/billing", icon: Wallet },
     { name: "Rewards & Coupons", href: "/dashboard/rewards", icon: Gift },
     { name: "Membership Center", href: "/dashboard/membership", icon: Star },
+    { name: "Aviation Passport", href: "/dashboard/passport", icon: Award },
     { name: "Concierge Logs", href: "/dashboard/concierge", icon: Navigation },
     { name: "AI Recommendations", href: "/dashboard/recommendations", icon: Sparkles },
     { name: "Travel Analytics", href: "/dashboard/analytics", icon: Activity },
@@ -34,10 +37,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: "Notifications", href: "/dashboard/notifications", icon: Bell, badge: unreadNotifCount },
   ];
 
+  if (profile?.role === "admin") {
+    links.push({ name: "Admin Airlines", href: "/dashboard/admin/airlines", icon: ShieldCheck });
+  }
+
   return (
     <div className="min-h-screen bg-onyx flex select-none">
       {/* Sidebar */}
-      <aside className="w-64 border-r border-white/10 bg-[#020202] flex flex-col relative z-20 shrink-0 h-screen sticky top-0 overflow-y-auto custom-scrollbar">
+      <aside data-lenis-prevent className="w-64 border-r border-white/10 bg-[#020202] flex flex-col relative z-20 shrink-0 h-screen sticky top-0 overflow-y-auto custom-scrollbar">
         <div className="p-8 pb-6">
           <Link href="/" className="text-2xl font-serif font-bold text-white tracking-tight flex items-center gap-2">
             <Plane className="w-6 h-6 text-gold -rotate-45" /> SkyLuxe
@@ -66,7 +73,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
 
         <div className="p-4 border-t border-white/10 space-y-2 bg-black/40">
-          <Link href="/">
+          <Link href="/?landing=true">
             <span className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-gold hover:bg-gold/10 transition-all duration-300 font-medium text-sm cursor-pointer">
               <Plane className="w-4 h-4 -rotate-45" />
               Main Platform
@@ -82,12 +89,58 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-grow relative h-screen overflow-y-auto bg-onyx flex flex-col">
+      <main data-lenis-prevent className="flex-grow relative h-screen overflow-y-auto bg-onyx flex flex-col">
         {/* Topbar */}
         <header className="sticky top-0 z-10 border-b border-white/10 bg-onyx/85 backdrop-blur-md px-8 py-4 flex justify-between items-center shrink-0">
-          <h2 className="text-lg font-serif text-white font-medium">Command Center • Welcome, Mr. Sterling</h2>
+          <h2 className="text-lg font-serif text-white font-medium">
+            Command Center • Welcome, {profile?.name ? `Mr. ${profile.name.split(" ").pop()}` : "Sterling"}
+          </h2>
           
           <div className="flex items-center gap-4">
+            {/* Membership Tier Badge */}
+            {(() => {
+              if (!profile || !profile.membership || profile.membership === "none") return null;
+              const tier = profile.membership.toLowerCase().replace(" ", "_");
+              if (tier === "black_elite") {
+                return (
+                  <span className="px-3 py-1 rounded-full text-[10px] font-semibold tracking-wider uppercase border border-black/80 bg-gradient-to-r from-neutral-900 to-black text-gold shadow-[0_0_15px_rgba(212,175,55,0.4)]">
+                    ✦ Black Elite
+                  </span>
+                );
+              }
+              if (tier === "executive") {
+                return (
+                  <span className="px-3 py-1 rounded-full text-[10px] font-semibold tracking-wider uppercase border border-gold/40 bg-gradient-to-r from-gold/10 to-gold/20 text-gold shadow-[0_0_10px_rgba(212,175,55,0.2)]">
+                    ✦ Executive
+                  </span>
+                );
+              }
+              if (tier === "silver") {
+                return (
+                  <span className="px-3 py-1 rounded-full text-[10px] font-semibold tracking-wider uppercase border border-white/20 bg-gradient-to-r from-white/5 to-white/10 text-platinum">
+                    ✦ Silver Club
+                  </span>
+                );
+              }
+              return null;
+            })()}
+
+            {/* Currency Toggle */}
+            <div className="flex bg-white/5 border border-white/10 p-0.5 rounded-xl text-[10px]">
+              <button 
+                onClick={() => setCurrency("USD")}
+                className={`px-2.5 py-1 rounded-lg transition-all ${currency === "USD" ? "bg-gold text-onyx font-bold" : "text-platinum/60 hover:text-white"}`}
+              >
+                USD ($)
+              </button>
+              <button 
+                onClick={() => setCurrency("INR")}
+                className={`px-2.5 py-1 rounded-lg transition-all ${currency === "INR" ? "bg-gold text-onyx font-bold" : "text-platinum/60 hover:text-white"}`}
+              >
+                INR (₹)
+              </button>
+            </div>
+
             <Link href="/dashboard/notifications">
               <button className="p-2 rounded-full hover:bg-white/5 text-platinum/60 hover:text-white transition-colors relative">
                 <Bell className="w-5 h-5" />
@@ -97,7 +150,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </button>
             </Link>
             <div className="w-9 h-9 rounded-full border border-gold/30 bg-gold/10 flex items-center justify-center cursor-pointer hover:border-gold/60 transition-colors" onClick={() => window.location.href='/dashboard/profile'}>
-              <span className="text-gold text-xs font-bold font-serif">ES</span>
+              <span className="text-gold text-xs font-bold font-serif">{profile?.avatar || "ES"}</span>
             </div>
           </div>
         </header>

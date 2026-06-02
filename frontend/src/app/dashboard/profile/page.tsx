@@ -1,9 +1,70 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { User, Globe, Coffee, Briefcase, Camera, Check } from "lucide-react";
+import { User, Globe, Coffee, Briefcase, Camera, Check, Loader2 } from "lucide-react";
+import { useSkyLuxeStore } from "@/store/skyluxeStore";
+import { useState, useEffect } from "react";
+import Link from "next/link";
 
 export default function Profile() {
+  const { profile, updateProfile, updatePreferences } = useSkyLuxeStore();
+  
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [residence, setResidence] = useState("");
+  
+  const [dietary, setDietary] = useState("");
+  const [beverages, setBeverages] = useState("");
+  const [groundTransport, setGroundTransport] = useState("");
+  const [cabinAmbiance, setCabinAmbiance] = useState("");
+
+  const [savingDetails, setSavingDetails] = useState(false);
+  const [savingPrefs, setSavingPrefs] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
+
+  // Sync component state with global store profile on mount/change
+  useEffect(() => {
+    if (profile) {
+      setName(profile.name || "");
+      setEmail(profile.email || "");
+      setPhone(profile.phone || "");
+      setResidence(profile.residence || "");
+      setDietary(profile.preferences?.dietary || "");
+      setBeverages(profile.preferences?.beverages || "");
+      setGroundTransport(profile.preferences?.groundTransport || "Luxury SUV (Cadillac Escalade / Range Rover)");
+      setCabinAmbiance(profile.preferences?.cabinAmbiance || "");
+    }
+  }, [profile]);
+
+  const handleSaveDetails = async () => {
+    setSavingDetails(true);
+    try {
+      await updateProfile({ name, phone, residence });
+      setSuccessMsg("Personal details updated successfully!");
+      setTimeout(() => setSuccessMsg(""), 3000);
+    } catch (e) {
+      console.error("Failed to update profile", e);
+    } finally {
+      setSavingDetails(false);
+    }
+  };
+
+  const handleSavePrefs = async () => {
+    setSavingPrefs(true);
+    try {
+      await updatePreferences({ dietary, beverages, groundTransport, cabinAmbiance });
+      setSuccessMsg("In-flight preferences updated successfully!");
+      setTimeout(() => setSuccessMsg(""), 3000);
+    } catch (e) {
+      console.error("Failed to update preferences", e);
+    } finally {
+      setSavingPrefs(false);
+    }
+  };
+
+  const initials = profile?.avatar || (name ? name.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2) : "SL");
+
   return (
     <div className="space-y-8 pb-12">
       <div>
@@ -11,20 +72,32 @@ export default function Profile() {
         <p className="text-platinum/50 font-light text-sm">Manage your personal details, travel documents, and concierge preferences.</p>
       </div>
 
+      {successMsg && (
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 bg-gold/10 border border-gold/30 rounded-xl text-gold text-sm font-medium"
+        >
+          {successMsg}
+        </motion.div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Left Column: Avatar & Basic Info */}
         <div className="lg:col-span-1 space-y-8">
           <div className="glass-panel p-8 rounded-3xl border border-white/10 text-center relative">
             <div className="w-32 h-32 mx-auto rounded-full bg-gold/10 border-2 border-gold/30 flex items-center justify-center relative mb-6">
-              <span className="text-4xl font-serif text-gold">ES</span>
+              <span className="text-4xl font-serif text-gold">{initials}</span>
               <button className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-onyx border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors">
                 <Camera className="w-4 h-4 text-white" />
               </button>
             </div>
-            <h2 className="text-2xl font-serif font-bold text-white mb-1">Eashan Sterling</h2>
-            <p className="text-platinum/50 text-sm mb-4">Founder's Club Member</p>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-500/10 text-green-400 text-xs font-medium">
+            <h2 className="text-2xl font-serif font-bold text-white mb-1">{name || "SkyLuxe Member"}</h2>
+            <p className="text-platinum/50 text-sm mb-4">
+              {profile?.membership ? profile.membership.toUpperCase() : "Member"}
+            </p>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold/10 text-gold text-xs font-medium border border-gold/20">
               <Check className="w-3 h-3" /> Identity Verified
             </div>
           </div>
@@ -36,12 +109,48 @@ export default function Profile() {
             <div className="space-y-4">
               <div className="p-4 bg-white/5 rounded-xl border border-white/5">
                 <p className="text-xs text-platinum/50 uppercase tracking-widest mb-1">Primary Passport</p>
-                <p className="text-white text-sm">United States • ••••••892</p>
+                <p className="text-white text-sm">{profile?.passport || "United States • ••••••892"}</p>
                 <p className="text-platinum/40 text-xs mt-1">Exp: Oct 2030</p>
               </div>
               <button className="w-full py-2.5 rounded-xl border border-dashed border-white/20 text-platinum/60 hover:text-white hover:bg-white/5 transition-colors text-sm">
                 + Add Visa / Secondary Passport
               </button>
+            </div>
+          </div>
+
+          {/* Passport Summary & Achievements Card */}
+          <div className="glass-panel p-6 rounded-3xl border border-white/10">
+            <h3 className="text-lg font-serif font-bold text-white mb-4 flex items-center justify-between">
+              <span>Aviation Legacy</span>
+              <Link href="/dashboard/passport" className="text-gold text-xs font-medium hover:underline">
+                View Passport
+              </Link>
+            </h3>
+            
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="p-3 bg-white/5 rounded-xl text-center">
+                <p className="text-lg font-bold text-white font-mono">{profile?.passportStats?.stamps?.length || 0}</p>
+                <p className="text-[10px] text-platinum/50 uppercase tracking-widest font-mono">Customs Stamps</p>
+              </div>
+              <div className="p-3 bg-white/5 rounded-xl text-center">
+                <p className="text-lg font-bold text-white font-mono">{profile?.achievements?.length || 0}</p>
+                <p className="text-[10px] text-platinum/50 uppercase tracking-widest font-mono">Milestones</p>
+              </div>
+            </div>
+
+            {/* Render 3 latest achievements */}
+            <div className="space-y-3">
+              <p className="text-[10px] text-platinum/40 uppercase tracking-widest font-mono">Unlocked Milestones</p>
+              {profile?.achievements && profile.achievements.length > 0 ? (
+                profile.achievements.slice(0, 3).map((ach: string, idx: number) => (
+                  <div key={idx} className="flex items-center gap-2 text-xs text-platinum/70 bg-white/5 p-2.5 rounded-xl border border-white/5">
+                    <span className="text-gold text-[10px]">✦</span>
+                    <span className="font-medium text-white capitalize">{ach.replace(/_/g, " ")}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-platinum/40 italic">No milestones unlocked yet.</p>
+              )}
             </div>
           </div>
         </div>
@@ -56,22 +165,47 @@ export default function Profile() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
                 <label className="text-xs text-platinum/50 uppercase tracking-widest mb-2 block">Full Name</label>
-                <input type="text" defaultValue="Eashan Sterling" className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-gold/50 outline-none" />
+                <input 
+                  type="text" 
+                  value={name} 
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-gold/50 outline-none" 
+                />
               </div>
               <div>
                 <label className="text-xs text-platinum/50 uppercase tracking-widest mb-2 block">Email Address</label>
-                <input type="email" defaultValue="eashan@company.com" className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-gold/50 outline-none" />
+                <input 
+                  type="email" 
+                  value={email} 
+                  disabled
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-platinum/50 outline-none cursor-not-allowed" 
+                />
               </div>
               <div>
                 <label className="text-xs text-platinum/50 uppercase tracking-widest mb-2 block">Phone Number</label>
-                <input type="tel" defaultValue="+1 (555) 019-9233" className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-gold/50 outline-none" />
+                <input 
+                  type="tel" 
+                  value={phone} 
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-gold/50 outline-none" 
+                />
               </div>
               <div>
                 <label className="text-xs text-platinum/50 uppercase tracking-widest mb-2 block">Primary Residence</label>
-                <input type="text" defaultValue="Mumbai, IND" className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-gold/50 outline-none" />
+                <input 
+                  type="text" 
+                  value={residence} 
+                  onChange={(e) => setResidence(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-gold/50 outline-none" 
+                />
               </div>
             </div>
-            <button className="py-3 px-6 rounded-xl bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition-colors text-sm">
+            <button 
+              onClick={handleSaveDetails}
+              disabled={savingDetails}
+              className="py-3 px-6 rounded-xl bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition-colors text-sm flex items-center gap-2"
+            >
+              {savingDetails && <Loader2 className="w-4 h-4 animate-spin text-white" />}
               Save Changes
             </button>
           </div>
@@ -83,26 +217,50 @@ export default function Profile() {
             <div className="space-y-6">
               <div>
                 <label className="text-xs text-platinum/50 uppercase tracking-widest mb-2 block">Dietary Requirements</label>
-                <input type="text" defaultValue="No shellfish. Preferred sparkling water." className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-gold/50 outline-none" />
+                <input 
+                  type="text" 
+                  value={dietary} 
+                  onChange={(e) => setDietary(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-gold/50 outline-none" 
+                />
               </div>
               <div>
                 <label className="text-xs text-platinum/50 uppercase tracking-widest mb-2 block">Favorite Beverages</label>
-                <input type="text" defaultValue="Macallan 18, San Pellegrino, Espresso" className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-gold/50 outline-none" />
+                <input 
+                  type="text" 
+                  value={beverages} 
+                  onChange={(e) => setBeverages(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-gold/50 outline-none" 
+                />
               </div>
               <div>
                 <label className="text-xs text-platinum/50 uppercase tracking-widest mb-2 block">Ground Transportation</label>
-                <select className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-gold/50 outline-none appearance-none">
-                  <option>Luxury SUV (Cadillac Escalade / Range Rover)</option>
-                  <option>Executive Sedan (Mercedes S-Class)</option>
-                  <option>Helicopter Transfer (Where Available)</option>
+                <select 
+                  value={groundTransport} 
+                  onChange={(e) => setGroundTransport(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-gold/50 outline-none appearance-none"
+                >
+                  <option value="Luxury SUV (Cadillac Escalade / Range Rover)">Luxury SUV (Cadillac Escalade / Range Rover)</option>
+                  <option value="Executive Sedan (Mercedes S-Class)">Executive Sedan (Mercedes S-Class)</option>
+                  <option value="Helicopter Transfer (Where Available)">Helicopter Transfer (Where Available)</option>
                 </select>
               </div>
               <div>
                 <label className="text-xs text-platinum/50 uppercase tracking-widest mb-2 block">Cabin Ambiance</label>
-                <textarea rows={3} defaultValue="Dimmed lighting during night flights. Temperature set to 21°C." className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-gold/50 outline-none resize-none" />
+                <textarea 
+                  rows={3} 
+                  value={cabinAmbiance} 
+                  onChange={(e) => setCabinAmbiance(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-gold/50 outline-none resize-none" 
+                />
               </div>
             </div>
-            <button className="mt-6 py-3 px-6 rounded-xl bg-gold text-onyx font-bold hover:bg-gold-light transition-colors text-sm shadow-[0_0_15px_rgba(212,175,55,0.3)]">
+            <button 
+              onClick={handleSavePrefs}
+              disabled={savingPrefs}
+              className="mt-6 py-3 px-6 rounded-xl bg-gold text-onyx font-bold hover:bg-gold-light transition-colors text-sm shadow-[0_0_15px_rgba(212,175,55,0.3)] flex items-center gap-2"
+            >
+              {savingPrefs && <Loader2 className="w-4 h-4 animate-spin text-onyx" />}
               Update Preferences
             </button>
           </div>

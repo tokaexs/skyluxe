@@ -6,9 +6,17 @@ import { usePathname } from "next/navigation";
 
 export default function Footer() {
   const pathname = usePathname();
-  
-  // Hide footer on full-screen immersive pages
-  if (pathname === '/fleet' || pathname === '/concierge') {
+
+  // Hide footer on full-screen immersive, dashboard, auth, or checkout pages
+  if (
+    pathname === '/fleet' ||
+    pathname === '/concierge' ||
+    pathname?.startsWith('/dashboard') ||
+    pathname?.startsWith('/member-lounge') ||
+    pathname?.startsWith('/auth') ||
+    pathname?.startsWith('/checkout') ||
+    pathname?.startsWith('/track-flight')
+  ) {
     return null;
   }
 
@@ -40,9 +48,9 @@ export default function Footer() {
         <div>
           <h4 className="text-white font-semibold mb-6">Global Offices</h4>
           <div className="space-y-4 text-platinum/50 text-sm font-light">
-            <p className="flex items-center gap-2"><MapPin className="w-4 h-4 text-gold"/> Dubai, UAE</p>
-            <p className="flex items-center gap-2"><MapPin className="w-4 h-4 text-gold"/> London, UK</p>
-            <p className="flex items-center gap-2"><MapPin className="w-4 h-4 text-gold"/> New York, USA</p>
+            <p className="flex items-center gap-2"><MapPin className="w-4 h-4 text-gold" /> Dubai, UAE</p>
+            <p className="flex items-center gap-2"><MapPin className="w-4 h-4 text-gold" /> London, UK</p>
+            <p className="flex items-center gap-2"><MapPin className="w-4 h-4 text-gold" /> New York, USA</p>
           </div>
         </div>
       </div>

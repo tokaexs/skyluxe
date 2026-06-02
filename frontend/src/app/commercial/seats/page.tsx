@@ -6,6 +6,7 @@ import { ArrowRight, Check, Compass, Users } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useEffect, Suspense } from "react";
+import { useSkyLuxeStore } from "@/store/skyluxeStore";
 
 const seatTypes = {
   first: { label: "First Class Suite", surcharge: 150, color: "bg-gold border-gold/40 text-onyx" },
@@ -32,6 +33,7 @@ const takenSeats = ["1B", "4E", "5A", "9C", "10F"];
 function SeatsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { currency, formatAmount } = useSkyLuxeStore();
   const flightId = searchParams.get("flightId") || "AI-101";
   const fromCode = searchParams.get("from") || "BOM";
   const toCode = searchParams.get("to") || "DXB";
@@ -110,11 +112,11 @@ function SeatsContent() {
           <div className="flex gap-6 mt-8 flex-wrap justify-center">
             <div className="flex items-center gap-2">
               <span className="w-3.5 h-3.5 rounded bg-gold border border-gold/30" />
-              <span className="text-xs text-platinum/70">First Class Suite (+$150)</span>
+              <span className="text-xs text-platinum/70">First Class Suite (+{formatAmount(150)})</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-3.5 h-3.5 rounded bg-blue-600 border border-blue-400" />
-              <span className="text-xs text-platinum/70">Business Flatbed (+$80)</span>
+              <span className="text-xs text-platinum/70">Business Flatbed (+{formatAmount(80)})</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-3.5 h-3.5 rounded bg-white/10 border border-white/20" />
@@ -150,7 +152,7 @@ function SeatsContent() {
               <div className="w-full h-px bg-white/10 my-4" />
               <div className="flex justify-between items-end">
                 <span className="text-platinum/80 text-sm">Total Price</span>
-                <span className="text-3xl font-bold text-white">${totalPrice}</span>
+                <span className="text-3xl font-bold text-white">{formatAmount(totalPrice)}</span>
               </div>
             </div>
 

@@ -4,12 +4,15 @@ import { motion, useScroll, useTransform, AnimatePresence, useMotionValue, useSp
 import {
   ArrowRight, PlaneTakeoff, ShieldCheck, Sparkles, MapPin, Star,
   Clock, Trophy, ChevronLeft, ChevronRight, Phone, Mail, Globe,
-  Calendar, Users, Plane, Compass, Zap, Crown, Navigation, Wind
+  Calendar, Users, Plane, Compass, Zap, Crown, Navigation, Wind,
+  Coins, Award, QrCode, LogOut
 } from "lucide-react";
 import Link from "next/link";
-import { useRef, useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRef, useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import GlassNavbar from "@/components/ui/GlassNavbar";
+import { useAuth } from "@/context/AuthContext";
+import { useSkyLuxeStore } from "@/store/skyluxeStore";
 
 // ─── Testimonials ──────────────────────────────────────────────────────────
 const TESTIMONIALS = [
@@ -130,7 +133,18 @@ function AnimatedRouteLine({ x1, y1, x2, y2, delay }: { x1: number; y1: number; 
 }
 
 // ─── Main Component ──────────────────────────────────────────────────────
-export default function Home() {
+function HomeContent() {
+  const { isAuthenticated, logout, isLoading } = useAuth();
+  const { profile, flights, formatAmount, walletBalance, fetchInitialData } = useSkyLuxeStore();
+  const searchParams = useSearchParams();
+  const forceLanding = searchParams.get("landing") === "true";
+  
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchInitialData();
+    }
+  }, [isAuthenticated, fetchInitialData]);
+
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
@@ -220,6 +234,282 @@ export default function Home() {
     setContactForm(p => ({ ...p, sent: true }));
     setTimeout(() => setContactForm({ name: "", email: "", msg: "", sent: false }), 4000);
   };
+  const activeTier = (profile?.membership || "none").toLowerCase().replace(" ", "_");
+  const isMember = activeTier !== "none";
+
+  if (isAuthenticated && (isLoading || !profile?.id)) {
+    return (
+      <div className="min-h-screen bg-onyx flex flex-col items-center justify-center text-white">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gold mb-4"></div>
+        <p className="text-sm font-light text-platinum/60">Opening security terminals...</p>
+      </div>
+    );
+  }
+
+  if (isAuthenticated && isMember && !forceLanding) {
+    // Choose card details
+    let cardGradient = "from-zinc-800 via-zinc-700 to-zinc-900";
+    let cardTextColor = "text-zinc-300";
+    let cardTitle = "Guest Aviator";
+    if (activeTier === "silver") {
+      cardGradient = "from-slate-300 via-slate-100 to-slate-400";
+      cardTextColor = "text-slate-800";
+      cardTitle = "Silver Club";
+    } else if (activeTier === "executive") {
+      cardGradient = "from-amber-400 via-amber-100 to-amber-600";
+      cardTextColor = "text-amber-950";
+      cardTitle = "Executive Club";
+    } else if (activeTier === "black_elite" || activeTier === "black_elite") {
+      cardGradient = "from-neutral-900 via-neutral-800 to-black";
+      cardTextColor = "text-gold";
+      cardTitle = "Black Elite Club";
+    }
+
+    const stats = profile?.passportStats || { countriesVisited: [], flightsTaken: 0, privateJetHours: 0 };
+    const upcoming = flights.filter(f => f.status === "Confirmed" || f.status === "Pending").slice(0, 2);
+
+    return (
+      <div className="min-h-screen bg-onyx flex flex-col relative select-none">
+        {/* Glowing Background Accent */}
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gold/5 rounded-full blur-[140px] pointer-events-none" />
+        
+        <GlassNavbar />
+
+        <main className="max-w-7xl mx-auto px-6 pt-36 pb-20 w-full flex-1 flex flex-col gap-12">
+          {/* Welcome Greeting */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-6 border-b border-white/10">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold bg-gold/20 text-gold uppercase tracking-wider font-mono">
+                  Sovereign Member Hub
+                </span>
+                <span className="text-white/30 text-xs">• Operating System Online</span>
+              </div>
+              <h1 className="text-4xl md:text-5xl font-serif font-bold text-white tracking-tight">
+                Welcome back, {profile?.name || "Aviator"}
+              </h1>
+              <p className="text-platinum/50 font-light text-sm mt-2 max-w-2xl">
+                Review your digital flight credentials, track active dispatches, and check recent travel stats.
+              </p>
+            </div>
+            
+            <div className="flex gap-3">
+              <Link href="/commercial">
+                <button className="px-5 py-2.5 rounded-xl bg-gold text-onyx font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(212,175,55,0.25)] hover:bg-gold-light transition-all">
+                  Book Commercial Leg
+                </button>
+              </Link>
+              <Link href="/fleet">
+                <button className="px-5 py-2.5 rounded-xl border border-white/10 hover:border-white/20 bg-white/5 text-white font-medium text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all">
+                  Charter Private Jet
+                </button>
+              </Link>
+            </div>
+          </div>
+
+          {/* Hub Sections Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Left Block: Digital Credentials & Stats (5 cols) */}
+            <div className="lg:col-span-5 space-y-6">
+              {/* Digital Club Card */}
+              <div className={`w-full h-64 rounded-3xl p-6 relative overflow-hidden shadow-2xl border bg-gradient-to-br ${cardGradient} ${
+                activeTier === "black_elite" ? "border-gold/30" : "border-white/10"
+              }`}>
+                <div className="absolute -top-1/4 -right-1/4 w-80 h-80 rounded-full bg-white/5 blur-[80px] pointer-events-none" />
+                
+                <div className="h-full flex flex-col justify-between relative z-10">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className={`text-[8px] tracking-[0.25em] font-mono uppercase font-bold ${
+                        activeTier === "silver" ? "text-slate-600" : activeTier === "executive" ? "text-amber-800" : "text-gold/70"
+                      }`}>
+                        SkyLuxe Sovereignty
+                      </span>
+                      <h3 className={`text-2xl font-serif font-bold mt-0.5 ${cardTextColor}`}>
+                        {cardTitle}
+                      </h3>
+                    </div>
+                    <Star className={`w-6 h-6 ${cardTextColor}`} />
+                  </div>
+
+                  <div className="flex justify-between items-end">
+                    <div className="space-y-3">
+                      <div>
+                        <p className={`text-[8px] uppercase tracking-widest font-mono ${
+                          activeTier === "silver" ? "text-slate-600" : "text-platinum/40"
+                        }`}>
+                          Verified Member
+                        </p>
+                        <p className={`font-semibold text-sm ${
+                          activeTier === "silver" ? "text-slate-900" : "text-white"
+                        }`}>{profile.name}</p>
+                      </div>
+
+                      <div className="flex gap-6">
+                        <div>
+                          <p className={`text-[7px] uppercase tracking-widest font-mono ${
+                            activeTier === "silver" ? "text-slate-500" : "text-platinum/40"
+                          }`}>
+                            Member ID
+                          </p>
+                          <p className={`font-mono text-[10px] ${
+                            activeTier === "silver" ? "text-slate-800" : "text-white"
+                          }`}>
+                            SL-{profile.id ? profile.id.slice(-6).toUpperCase() : "GUEST"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className={`text-[7px] uppercase tracking-widest font-mono ${
+                            activeTier === "silver" ? "text-slate-500" : "text-platinum/40"
+                          }`}>
+                            SkyCoins
+                          </p>
+                          <p className={`font-mono text-[10px] font-bold ${
+                            activeTier === "silver" ? "text-slate-800" : "text-gold"
+                          }`}>
+                            {(profile.coins || 0).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-end gap-1.5">
+                      <div className="p-1 bg-white/95 rounded-md shadow-md">
+                        <QrCode className="w-9 h-9 text-black" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick statistics */}
+              <div className="grid grid-cols-3 gap-4">
+                <Link href="/dashboard/passport" className="p-4 rounded-2xl bg-white/5 border border-white/5 text-center hover:border-gold/30 hover:bg-white/10 transition-all">
+                  <Globe className="w-5 h-5 text-gold mx-auto mb-1" />
+                  <p className="text-lg font-bold font-mono text-white">{stats.countriesVisited?.length || 0}</p>
+                  <p className="text-[9px] text-platinum/40 uppercase tracking-widest font-mono mt-0.5">Countries</p>
+                </Link>
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/5 text-center">
+                  <Plane className="w-5 h-5 text-gold mx-auto mb-1" />
+                  <p className="text-lg font-bold font-mono text-white">{stats.flightsTaken || 0}</p>
+                  <p className="text-[9px] text-platinum/40 uppercase tracking-widest font-mono mt-0.5">Missions</p>
+                </div>
+                <Link href="/dashboard/passport" className="p-4 rounded-2xl bg-white/5 border border-white/5 text-center hover:border-gold/30 hover:bg-white/10 transition-all">
+                  <Clock className="w-5 h-5 text-gold mx-auto mb-1" />
+                  <p className="text-lg font-bold font-mono text-white">{stats.privateJetHours || 0}h</p>
+                  <p className="text-[9px] text-platinum/40 uppercase tracking-widest font-mono mt-0.5">Jet Hours</p>
+                </Link>
+              </div>
+
+              {/* Wallet Card */}
+              <div className="glass-panel p-6 rounded-2xl border border-white/10 bg-onyx/40 flex justify-between items-center">
+                <div>
+                  <p className="text-xs text-platinum/40 uppercase tracking-widest font-mono">FBO Wallet Balance</p>
+                  <h4 className="text-2xl font-bold text-white mt-1 font-mono">{formatAmount(walletBalance)}</h4>
+                </div>
+                <Link href="/dashboard/billing">
+                  <button className="px-4 py-2 rounded-xl bg-gold text-onyx font-bold hover:bg-gold-light transition-all text-xs uppercase tracking-wider">
+                    Wallet Settings
+                  </button>
+                </Link>
+              </div>
+            </div>
+
+            {/* Right Block: Missions, Lounges, Concierge (7 cols) */}
+            <div className="lg:col-span-7 space-y-6">
+              {/* Scheduled Missions */}
+              <div className="glass-panel p-6 rounded-3xl border border-white/10">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-lg font-serif font-bold text-white flex items-center gap-2">
+                    <PlaneTakeoff className="w-5 h-5 text-gold" /> Active Flight Dispatches
+                  </h3>
+                  <Link href="/dashboard/flights" className="text-gold text-xs font-medium hover:underline">
+                    All Flights ({flights.length})
+                  </Link>
+                </div>
+
+                {upcoming.length > 0 ? (
+                  <div className="space-y-4">
+                    {upcoming.map((flight) => (
+                      <div key={flight.id} className="p-5 rounded-2xl border border-white/5 bg-white/5 flex justify-between items-center gap-4">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded-full text-[8px] font-bold bg-gold/10 text-gold uppercase tracking-wider font-mono">
+                              {flight.type === "private" ? "Charter" : "Commercial"}
+                            </span>
+                            <span className="text-white/40 text-[10px] font-mono">PNR: {flight.id}</span>
+                          </div>
+                          <h4 className="text-white font-medium text-sm mt-1.5">{flight.departure.city} ({flight.departure.code}) to {flight.arrival.city} ({flight.arrival.code})</h4>
+                          <p className="text-xs text-platinum/50 font-light mt-0.5">{flight.date} at {flight.departure.time}</p>
+                        </div>
+                        <Link href="/dashboard/flights">
+                          <button className="px-4 py-2 rounded-xl border border-white/15 text-white hover:bg-white/5 transition-all text-xs font-medium">
+                            Manage
+                          </button>
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-8 border border-dashed border-white/5 rounded-2xl text-center text-platinum/40 font-light text-xs">
+                    No active dispatches. Book a commercial leg or charter a private jet to start a mission.
+                  </div>
+                )}
+              </div>
+
+              {/* Lounge and Concierge Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Gated lounge access */}
+                <div className="glass-panel p-6 rounded-2xl border border-white/10 flex flex-col justify-between gap-6">
+                  <div>
+                    <h4 className="text-white font-serif font-bold text-base flex items-center gap-2">
+                      <Compass className="w-5 h-5 text-gold" /> Gated Club Lounge
+                    </h4>
+                    <p className="text-platinum/50 text-xs mt-2 leading-relaxed">
+                      Access member-only travel reports, partner perks, and private lounge updates.
+                    </p>
+                  </div>
+                  <Link href="/member-lounge">
+                    <button className="w-full py-2.5 rounded-xl bg-gold/10 text-gold border border-gold/30 hover:bg-gold hover:text-onyx transition-colors text-xs font-bold uppercase tracking-wider">
+                      Enter Lounge Room
+                    </button>
+                  </Link>
+                </div>
+
+                {/* AI Concierge quick chat */}
+                <div className="glass-panel p-6 rounded-2xl border border-white/10 flex flex-col justify-between gap-6">
+                  <div>
+                    <h4 className="text-white font-serif font-bold text-base flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-gold" /> AI Concierge Desk
+                    </h4>
+                    <p className="text-platinum/50 text-xs mt-2 leading-relaxed">
+                      Consult the Cortex travel assistant regarding routing options, transfers, and dining.
+                    </p>
+                  </div>
+                  <Link href="/concierge">
+                    <button className="w-full py-2.5 rounded-xl border border-white/10 hover:border-white/20 bg-white/5 text-white font-medium text-xs uppercase tracking-wider">
+                      Open Chat Channel
+                    </button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Centered Sign Out Action */}
+          <div className="flex justify-center mt-12 pt-8 border-t border-white/10 w-full">
+            <button
+              onClick={logout}
+              className="px-8 py-3.5 rounded-xl border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-400 text-sm font-bold uppercase tracking-wider flex items-center gap-2.5 transition-all duration-300 cursor-pointer"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out from Sovereign Platform
+            </button>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <main ref={containerRef} className="relative bg-[#020202] overflow-x-hidden selection:bg-gold/30">
@@ -1286,5 +1576,17 @@ export default function Home() {
         </div>
       </footer>
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#020202] flex items-center justify-center text-white">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gold"></div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }

@@ -2,17 +2,57 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import GlassNavbar from "@/components/ui/GlassNavbar";
-import { ArrowRight, Clock, ShieldCheck, Plane, Check, Sparkles, Filter, SlidersHorizontal, Map } from "lucide-react";
+import { ArrowRight, Clock, ShieldCheck, Plane, Check, Sparkles, Filter, SlidersHorizontal, Map, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { api } from "@/lib/api";
+import { useSkyLuxeStore } from "@/store/skyluxeStore";
 
-// Full flight database for partner airlines
+// Fallback logo helper with initials
+function SearchCardLogo({ logoUrl, airlineName, brandColor }: { logoUrl?: string; airlineName: string; brandColor?: string }) {
+  const [imageError, setImageError] = useState(!logoUrl);
+  
+  useEffect(() => {
+    setImageError(!logoUrl);
+  }, [logoUrl]);
+
+  const initials = airlineName
+    .split(" ")
+    .map(n => n[0])
+    .join("")
+    .substring(0, 2)
+    .toUpperCase();
+
+  if (imageError) {
+    return (
+      <div 
+        className="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-white font-mono text-sm shadow-md shrink-0"
+        style={{ backgroundColor: brandColor || "#D4AF37" }}
+      >
+        {initials}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={logoUrl}
+      alt={airlineName}
+      onError={() => setImageError(true)}
+      className="w-12 h-12 rounded-xl object-contain bg-white/10 p-1.5 border border-white/10 shrink-0"
+    />
+  );
+}
+
+// Full flight database for partner airlines (fallback)
 const mockFlightsDatabase = [
   {
     id: "AI-101",
     airline: "Air India",
     logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Air_India_Logo.svg/120px-Air_India_Logo.svg.png",
+    brandColor: "#e01d23",
+    iataCode: "AI",
     aircraft: "Airbus A350-900",
     departure: { time: "09:00", timestamp: 9.0 },
     arrival: { time: "11:30", timestamp: 11.5 },
@@ -26,6 +66,8 @@ const mockFlightsDatabase = [
     id: "UK-202",
     airline: "Vistara",
     logo: "https://upload.wikimedia.org/wikipedia/en/thumb/f/f5/Vistara_Logo.svg/120px-Vistara_Logo.svg.png",
+    brandColor: "#5f2545",
+    iataCode: "UK",
     aircraft: "Boeing 787-9 Dreamliner",
     departure: { time: "11:15", timestamp: 11.25 },
     arrival: { time: "13:40", timestamp: 13.66 },
@@ -39,6 +81,8 @@ const mockFlightsDatabase = [
     id: "6E-303",
     airline: "IndiGo",
     logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/IndiGo_Airlines_logo.svg/120px-IndiGo_Airlines_logo.svg.png",
+    brandColor: "#001d6c",
+    iataCode: "6E",
     aircraft: "Airbus A321neo",
     departure: { time: "14:00", timestamp: 14.0 },
     arrival: { time: "16:45", timestamp: 16.75 },
@@ -52,6 +96,8 @@ const mockFlightsDatabase = [
     id: "EK-505",
     airline: "Emirates",
     logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Emirates_logo.svg/150px-Emirates_logo.svg.png",
+    brandColor: "#d71920",
+    iataCode: "EK",
     aircraft: "Boeing 777-300ER",
     departure: { time: "16:30", timestamp: 16.5 },
     arrival: { time: "19:00", timestamp: 19.0 },
@@ -65,6 +111,8 @@ const mockFlightsDatabase = [
     id: "QP-404",
     airline: "Akasa Air",
     logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Akasa_Air_logo.svg/120px-Akasa_Air_logo.svg.png",
+    brandColor: "#ff6f00",
+    iataCode: "QP",
     aircraft: "Boeing 737 MAX 8",
     departure: { time: "07:30", timestamp: 7.5 },
     arrival: { time: "10:15", timestamp: 10.25 },
@@ -78,6 +126,8 @@ const mockFlightsDatabase = [
     id: "AI-102",
     airline: "Air India",
     logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Air_India_Logo.svg/120px-Air_India_Logo.svg.png",
+    brandColor: "#e01d23",
+    iataCode: "AI",
     aircraft: "Boeing 777-300ER",
     departure: { time: "22:15", timestamp: 22.25 },
     arrival: { time: "00:45", timestamp: 24.75 },
@@ -91,6 +141,8 @@ const mockFlightsDatabase = [
     id: "EK-506",
     airline: "Emirates",
     logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Emirates_logo.svg/150px-Emirates_logo.svg.png",
+    brandColor: "#d71920",
+    iataCode: "EK",
     aircraft: "Airbus A350-900",
     departure: { time: "18:45", timestamp: 18.75 },
     arrival: { time: "22:15", timestamp: 22.25 },
@@ -103,22 +155,87 @@ const mockFlightsDatabase = [
 ];
 
 function SearchResultsContent() {
+  const { currency, formatAmount } = useSkyLuxeStore();
   const searchParams = useSearchParams();
   const fromCode = searchParams.get("from") || "BOM";
-  const toCode = searchParams.get("to") || "DXB";
+  const toCode = searchParams.get("to") || "DWC";
   const dateStr = searchParams.get("date") || "2026-06-04";
-  const returnDate = searchParams.get("returnDate") || "2026-06-11";
   const tripType = searchParams.get("type") || "one-way";
   const passengers = Number(searchParams.get("passengers")) || 1;
   const initialClass = searchParams.get("class") || "All";
 
+  // API loading states
+  const [flights, setFlights] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
   // Filter States
   const [selectedAirlines, setSelectedAirlines] = useState<string[]>([]);
   const [selectedStops, setSelectedStops] = useState<number[]>([]);
-  const [maxPrice, setMaxPrice] = useState(1000);
+  const [maxPrice, setMaxPrice] = useState(1500);
   const [selectedClass, setSelectedClass] = useState(initialClass);
   const [selectedAircrafts, setSelectedAircrafts] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<"price" | "duration" | "departure">("price");
+
+  useEffect(() => {
+    const fetchResults = async () => {
+      setLoading(true);
+      try {
+        const cabinClass = selectedClass === "All" ? "business" : selectedClass.toLowerCase();
+        
+        // Query Express Flight Search
+        const results = await api.post<any[]>("/flights/search", {
+          from: fromCode,
+          to: toCode === "DXB" ? "Dubai Al Maktoum" : toCode === "Dubai" ? "Dubai Al Maktoum" : toCode,
+          date: dateStr,
+          passengers,
+          class: ['economy', 'business', 'first'].includes(cabinClass) ? cabinClass : 'business'
+        });
+
+        if (results && results.length > 0) {
+          const mapped = results.map(f => {
+            const mappedCabin = ['economy', 'business', 'first'].includes(cabinClass) ? cabinClass : 'business';
+            const airlineObj = f.airline && typeof f.airline === 'object' ? f.airline : null;
+            const airlineName = airlineObj ? airlineObj.airlineName : (typeof f.airline === 'string' ? f.airline : "Air India");
+            const logoUrl = airlineObj ? airlineObj.logoUrl : "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Air_India_Logo.svg/120px-Air_India_Logo.svg.png";
+            const brandColor = airlineObj ? (airlineObj.brandColor || "#D4AF37") : "#D4AF37";
+            const iataCode = airlineObj ? airlineObj.iataCode : "AI";
+
+            return {
+              id: f.flightNumber,
+              airline: airlineName,
+              logo: logoUrl,
+              brandColor: brandColor,
+              iataCode: iataCode,
+              aircraft: f.aircraft,
+              departure: { 
+                time: new Date(f.departure.time).toLocaleTimeString("en-US", {hour: '2-digit', minute:'2-digit', hour12: false}), 
+                timestamp: new Date(f.departure.time).getHours() + new Date(f.departure.time).getMinutes()/60 
+              },
+              arrival: { 
+                time: new Date(f.arrival.time).toLocaleTimeString("en-US", {hour: '2-digit', minute:'2-digit', hour12: false}), 
+                timestamp: new Date(f.arrival.time).getHours() + new Date(f.arrival.time).getMinutes()/60 
+              },
+              duration: `${Math.floor(f.duration / 60)}h ${f.duration % 60}m`,
+              price: f.price[mappedCabin as 'economy' | 'business' | 'first'] || 1200,
+              stops: 0,
+              classType: mappedCabin === 'first' ? 'First Class Suite' : mappedCabin === 'business' ? 'Business Class' : 'Economy',
+              tags: ["Direct", "Hot Meal", "Lounge Access"]
+            };
+          });
+          setFlights(mapped);
+        } else {
+          // No flights found, use mock database
+          setFlights(mockFlightsDatabase);
+        }
+      } catch (e) {
+        console.error("Flight search API failed, falling back to mock database:", e);
+        setFlights(mockFlightsDatabase);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchResults();
+  }, [fromCode, toCode, dateStr, passengers, selectedClass]);
 
   const formattedDate = new Date(dateStr).toLocaleDateString("en-US", {
     weekday: "short",
@@ -142,22 +259,11 @@ function SearchResultsContent() {
   };
 
   // Filter & Sort Logic
-  const filteredFlights = mockFlightsDatabase
+  const filteredFlights = flights
     .filter(flight => {
-      // Airline filter
       if (selectedAirlines.length > 0 && !selectedAirlines.includes(flight.airline)) return false;
-      // Stops filter
       if (selectedStops.length > 0 && !selectedStops.includes(flight.stops)) return false;
-      // Price filter
       if (flight.price > maxPrice) return false;
-      // Class filter
-      if (selectedClass !== "All") {
-        if (selectedClass === "First" && !flight.classType.includes("First")) return false;
-        if (selectedClass === "Business" && !flight.classType.includes("Business")) return false;
-        if (selectedClass === "Economy" && !flight.classType.includes("Economy")) return false;
-        if (selectedClass.includes("Class") && !flight.classType.toLowerCase().includes(selectedClass.replace(" Class", "").toLowerCase())) return false;
-      }
-      // Aircraft filter
       if (selectedAircrafts.length > 0) {
         const matches = selectedAircrafts.some(ac => flight.aircraft.toLowerCase().includes(ac.toLowerCase()));
         if (!matches) return false;
@@ -213,15 +319,18 @@ function SearchResultsContent() {
           <div className="space-y-3">
             <div className="flex justify-between items-center text-xs font-mono">
               <span className="text-platinum/50 uppercase">Max Tariff</span>
-              <span className="text-gold font-bold">${maxPrice}</span>
+              <span className="text-gold font-bold">{formatAmount(maxPrice)}</span>
             </div>
             <input 
               type="range" 
-              min={100} 
-              max={1500} 
-              step={50}
-              value={maxPrice} 
-              onChange={(e) => setMaxPrice(Number(e.target.value))}
+              min={currency === "USD" ? 100 : 100 * 83} 
+              max={currency === "USD" ? 1500 : 1500 * 83} 
+              step={currency === "USD" ? 50 : 50 * 83}
+              value={currency === "USD" ? maxPrice : Math.round(maxPrice * 83)} 
+              onChange={(e) => {
+                const val = Number(e.target.value);
+                setMaxPrice(currency === "USD" ? val : val / 83);
+              }}
               className="w-full accent-gold bg-white/10 h-1 rounded"
             />
           </div>
@@ -230,7 +339,7 @@ function SearchResultsContent() {
           <div className="space-y-3">
             <h4 className="text-[10px] text-platinum/50 uppercase tracking-widest font-mono">Airline Partners</h4>
             <div className="space-y-2">
-              {["Air India", "Vistara", "IndiGo", "Emirates", "Akasa Air"].map((airline) => (
+              {["Air India", "Vistara", "IndiGo", "Emirates", "Akasa Air", "Singapore Airlines", "Qatar Airways"].map((airline) => (
                 <label key={airline} className="flex items-center gap-3 text-sm text-platinum/80 cursor-pointer hover:text-white transition-colors">
                   <input 
                     type="checkbox" 
@@ -264,8 +373,8 @@ function SearchResultsContent() {
           <div className="space-y-3">
             <h4 className="text-[10px] text-platinum/50 uppercase tracking-widest font-mono">Aircraft Fleet</h4>
             <div className="space-y-2">
-              {["A350", "787", "777", "A321", "737"].map((ac) => {
-                const label = ac === "A350" ? "Airbus A350" : ac === "787" ? "Boeing 787" : ac === "777" ? "Boeing 777" : ac === "A321" ? "Airbus A321" : "Boeing 737";
+              {["A350", "787", "777", "A321", "737", "A380"].map((ac) => {
+                const label = ac === "A350" ? "Airbus A350" : ac === "787" ? "Boeing 787" : ac === "777" ? "Boeing 777" : ac === "A321" ? "Airbus A321" : ac === "A380" ? "Airbus A380" : "Boeing 737";
                 return (
                   <label key={ac} className="flex items-center gap-3 text-sm text-platinum/80 cursor-pointer hover:text-white transition-colors">
                     <input 
@@ -343,7 +452,12 @@ function SearchResultsContent() {
 
           {/* List of Results */}
           <div className="space-y-4">
-            {filteredFlights.length > 0 ? (
+            {loading ? (
+              <div className="glass-panel p-16 rounded-3xl border border-white/10 text-center flex flex-col items-center justify-center">
+                <Loader2 className="w-8 h-8 text-gold animate-spin mb-4" />
+                <p className="text-white text-sm font-medium">Retrieving active flight manifests...</p>
+              </div>
+            ) : filteredFlights.length > 0 ? (
               filteredFlights.map((flight) => (
                 <motion.div 
                   key={flight.id}
@@ -351,18 +465,25 @@ function SearchResultsContent() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="glass-panel p-6 rounded-3xl border border-white/10 hover:border-gold/30 hover:bg-white/[0.01] transition-all duration-300 group flex flex-col md:flex-row gap-6 items-center"
+                  style={{ borderLeft: `4px solid ${flight.brandColor || '#D4AF37'}` }}
                 >
                   {/* Airline Brand */}
-                  <div className="w-full md:w-1/4 flex flex-col gap-2">
-                    <p className="text-sm font-semibold text-white flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-gold" />
-                      {flight.airline}
-                    </p>
-                    <p className="text-[11px] font-mono text-platinum/50">{flight.id} • {flight.aircraft}</p>
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {flight.tags.map(tag => (
-                        <span key={tag} className="text-[9px] bg-white/5 px-2 py-0.5 rounded text-platinum/60 font-mono">{tag}</span>
-                      ))}
+                  <div className="w-full md:w-1/4 flex items-center gap-4">
+                    <SearchCardLogo 
+                      logoUrl={flight.logo} 
+                      airlineName={flight.airline} 
+                      brandColor={flight.brandColor} 
+                    />
+                    <div className="flex flex-col gap-1">
+                      <p className="text-sm font-semibold text-white flex items-center gap-1.5">
+                        {flight.airline}
+                      </p>
+                      <p className="text-[11px] font-mono text-platinum/50">{flight.id} • {flight.aircraft}</p>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {flight.tags.map((tag: string) => (
+                          <span key={tag} className="text-[9px] bg-white/5 px-2 py-0.5 rounded text-platinum/60 font-mono">{tag}</span>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
@@ -391,11 +512,11 @@ function SearchResultsContent() {
                   <div className="w-full md:w-1/4 flex flex-col items-end md:items-end justify-center border-t md:border-t-0 md:border-l border-white/5 pt-4 md:pt-0 md:pl-6 gap-3">
                     <div className="text-right w-full flex md:flex-col justify-between items-center md:items-end">
                       <span className="text-[10px] text-platinum/50 font-mono uppercase">{flight.classType}</span>
-                      <span className="text-2xl md:text-3xl font-bold text-white font-serif">${flight.price}</span>
+                      <span className="text-2xl md:text-3xl font-bold text-white font-serif">{formatAmount(flight.price)}</span>
                     </div>
                     
                     <Link href={`/flights/${flight.id}?from=${fromCode}&to=${toCode}&date=${dateStr}&passengers=${passengers}&class=${selectedClass}`} className="w-full">
-                      <button className="w-full py-3 rounded-xl bg-gold/15 text-gold border border-gold/30 hover:bg-gold hover:text-onyx hover:border-gold font-bold transition-all duration-300 text-sm">
+                      <button className="w-full py-3 rounded-xl bg-gold/15 text-gold border border-gold/30 hover:bg-gold hover:text-onyx hover:border-gold font-bold transition-all duration-300 text-sm cursor-pointer">
                         Book Now
                       </button>
                     </Link>

@@ -6,6 +6,7 @@ import { ArrowRight, Clock, ShieldCheck, Plane, Check, Sparkles } from "lucide-r
 import Link from "next/link";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { useSkyLuxeStore } from "@/store/skyluxeStore";
 
 const mockFlightsDatabase = [
   {
@@ -72,6 +73,7 @@ const mockFlightsDatabase = [
 
 function ResultsContent() {
   const searchParams = useSearchParams();
+  const { currency, formatAmount } = useSkyLuxeStore();
   const fromCode = searchParams.get("from") || "BOM";
   const toCode = searchParams.get("to") || "DXB";
   const dateStr = searchParams.get("date") || "2026-06-04";
@@ -160,7 +162,7 @@ function ResultsContent() {
               <div className="w-full md:w-1/4 flex flex-col items-end md:items-end justify-center border-t md:border-t-0 md:border-l border-white/10 pt-6 md:pt-0 md:pl-8 gap-4">
                 <div className="text-right w-full flex md:flex-col justify-between items-center md:items-end">
                   <span className="text-xs text-platinum/50">{flight.classType}</span>
-                  <span className="text-3xl font-bold text-white">${flight.price}</span>
+                  <span className="text-3xl font-bold text-white">{formatAmount(flight.price)}</span>
                 </div>
                 <Link href={`/commercial/details?flightId=${flight.id}&from=${fromCode}&to=${toCode}&date=${dateStr}`} className="w-full">
                   <button className="w-full py-3 rounded-xl bg-gold/10 text-gold border border-gold/30 font-bold hover:bg-gold hover:text-onyx transition-colors">

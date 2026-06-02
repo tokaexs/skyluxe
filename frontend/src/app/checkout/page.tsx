@@ -6,6 +6,25 @@ import { ArrowLeft, ShieldCheck, CreditCard, Lock, Zap, CheckCircle, QrCode, Pla
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSkyLuxeStore, FlightBooking } from "@/store/skyluxeStore";
+import { api } from "@/lib/api";
+
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined") {
+      resolve(false);
+      return;
+    }
+    if ((window as any).Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
 
 function CheckoutContent() {
   const router = useRouter();
@@ -33,74 +52,280 @@ function CheckoutContent() {
     legsList = [{ from: fromCode, to: toCode, date: dateStr }];
   }
 
-  const { walletBalance, chargeWallet, addCoins, bookFlight } = useSkyLuxeStore();
+  const { walletBalance, chargeWallet, addCoins, bookFlight, fetchInitialData, profile, currency, setCurrency, formatAmount } = useSkyLuxeStore();
   const [checkoutState, setCheckoutState] = useState<"idle" | "processing" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [generatedTicket, setGeneratedTicket] = useState<FlightBooking | null>(null);
   const [coinsEarned, setCoinsEarned] = useState(0);
+  const [logoError, setLogoError] = useState(false);
+  const [paymentOption, setPaymentOption] = useState<"wallet" | "gateway">("wallet");
+
+  useEffect(() => {
+    if (generatedTicket) {
+      setLogoError(!generatedTicket.logo);
+    }
+  }, [generatedTicket]);
+
+  const getTicketInitials = () => {
+    if (!generatedTicket) return "SL";
+    const name = generatedTicket.airline || "SkyLuxe Private";
+    return name
+      .split(" ")
+      .map(n => n[0])
+      .join("")
+      .substring(0, 2)
+      .toUpperCase();
+  };
+
+  const handleDownloadPDF = () => {
+    if (!generatedTicket || !generatedTicket.bookingDbId) return;
+    window.open(`http://localhost:5000/api/v1/bookings/${generatedTicket.bookingDbId}/boarding-pass/download`, "_blank");
+  };
+
+  useEffect(() => {
+    fetchInitialData();
+  }, [fetchInitialData]);
 
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
     setCheckoutState("processing");
     
     try {
-      // 1. Check wallet funds
-      if (walletBalance < queryPrice) {
+      if (!profile || !profile.id) {
         setCheckoutState("error");
-        setErrorMessage("Insufficient funds in your FBO aviation wallet. Please top-up via your dashboard.");
+        setErrorMessage("User profile is not loaded yet. Please wait or log in again.");
         return;
       }
 
-      // 2. Charge wallet / Create booking
-      let description = "";
-      let coins = Math.max(10, Math.floor(queryPrice * 0.01));
-      
-      if (type === "private") {
-        description = `Private Jet Charter: ${itemId.toUpperCase()} (${legsList.length} Leg(s))`;
-      } else if (type === "commercial") {
-        description = `Commercial Flight: ${itemId.toUpperCase()} (Seat ${seat})`;
-      } else if (type === "membership") {
-        description = `Membership Elite Tier: ${itemId.toUpperCase()}`;
-      }
-
-      setCoinsEarned(coins);
-
-      if (type === "membership") {
-        const chargeSuccess = await chargeWallet(queryPrice, description);
-        if (!chargeSuccess) {
+      if (paymentOption === "wallet") {
+        if (walletBalance < queryPrice) {
           setCheckoutState("error");
-          setErrorMessage("Transaction authorization failed. Contact ground logistics.");
+          setErrorMessage(`Insufficient FBO Wallet funds. Required: ${formatAmount(queryPrice)}, Balance: ${formatAmount(walletBalance)}`);
           return;
         }
-      } else {
-        const flightInput = {
-          type: type as "commercial" | "private",
-          airline: type === "commercial" 
-            ? (itemId.startsWith("AI") ? "Air India" : itemId.startsWith("6E") ? "IndiGo" : itemId.startsWith("EK") ? "Emirates" : itemId.startsWith("QP") ? "Akasa Air" : "Vistara") 
-            : undefined,
-          logo: type === "commercial"
-            ? (itemId.startsWith("AI") ? "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Air_India_Logo.svg/120px-Air_India_Logo.svg.png" : itemId.startsWith("6E") ? "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/IndiGo_Airlines_logo.svg/120px-IndiGo_Airlines_logo.svg.png" : itemId.startsWith("EK") ? "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Emirates_logo.svg/150px-Emirates_logo.svg.png" : itemId.startsWith("QP") ? "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Akasa_Air_logo.svg/120px-Akasa_Air_logo.svg.png" : "https://upload.wikimedia.org/wikipedia/en/thumb/f/f5/Vistara_Logo.svg/120px-Vistara_Logo.svg.png")
-            : undefined,
-          aircraft: type === "commercial" 
-            ? (itemId.includes("350") ? "Airbus A350-900" : itemId.includes("787") ? "Boeing 787-9 Dreamliner" : itemId.includes("777") ? "Boeing 777-300ER" : itemId.includes("321") ? "Airbus A321neo" : "Boeing 737 MAX 8") 
-            : itemId.toUpperCase(),
-          departure: { time: "09:00", code: fromCode, city: fromCode === "BOM" ? "Mumbai" : fromCode },
-          arrival: { time: "11:30", code: toCode, city: toCode === "DWC" ? "Dubai Al Maktoum" : toCode === "DXB" ? "Dubai" : toCode },
-          duration: type === "commercial" ? "3h 30m" : `${legsList.length * 3.5}h`,
-          seatNumber: type === "commercial" ? seat : undefined,
-          passengers,
-          cost: queryPrice,
-          date: dateStr,
+
+        const endpoint = type === "commercial" ? "/bookings" : "/bookings/charter";
+        const payload = type === "commercial" ? {
+          flight_id: itemId,
+          total_amount: queryPrice,
+          seat_number: seat,
+          passengers: [{
+            firstName: profile.name.split(" ")[0] || "Eashan",
+            lastName: profile.name.split(" ")[1] || "Sterling",
+            age: 35,
+            passportNumber: "US892347234",
+            nationality: "United States"
+          }]
+        } : {
+          aircraft_id: itemId,
+          legs: legsList,
           catering,
           chauffeur,
           security,
-          legs: type === "private" ? legsList : undefined
+          price: queryPrice
         };
-        const booked = await bookFlight(flightInput);
-        setGeneratedTicket(booked);
+
+        const bookingData = await api.post<any>(`${endpoint}?user_id=${profile.id}`, payload);
+        if (bookingData) {
+          const mapped: FlightBooking = {
+            id: bookingData._id.substring(0, 8).toUpperCase(),
+            type: bookingData.type as "commercial" | "private",
+            airline: bookingData.type === "commercial" 
+              ? (bookingData.flight?.airline?.airlineName || "Air India")
+              : "SkyLuxe Private",
+            logo: bookingData.type === "commercial"
+              ? bookingData.flight?.airline?.logoUrl
+              : undefined,
+            brandColor: bookingData.flight?.airline?.brandColor || "#D4AF37",
+            iataCode: bookingData.flight?.airline?.iataCode || "AI",
+            pnr: bookingData.bookingReference,
+            passengerName: `${bookingData.passengers?.[0]?.firstName || "Eashan"} ${bookingData.passengers?.[0]?.lastName || "Sterling"}`.toUpperCase(),
+            fareClass: bookingData.class ? bookingData.class.toUpperCase() : "FIRST CLASS",
+            boardingGroup: bookingData.class?.toLowerCase().includes("first") ? "GROUP A" : bookingData.class?.toLowerCase().includes("business") ? "GROUP B" : "GROUP C",
+            bookingDbId: bookingData._id,
+            aircraft: bookingData.type === "commercial"
+              ? (bookingData.flight?.aircraft || "Airbus A350-900") 
+              : (bookingData.aircraftModel || "Gulfstream G700"),
+            departure: { time: "09:00", code: fromCode, city: fromCode === "BOM" ? "Mumbai" : fromCode },
+            arrival: { time: "11:30", code: toCode, city: toCode === "DWC" ? "Dubai Al Maktoum" : toCode === "DXB" ? "Dubai" : toCode },
+            duration: bookingData.type === "commercial" ? "3h 30m" : `${legsList.length * 3.5}h`,
+            seatNumber: bookingData.type === "commercial" ? seat : undefined,
+            passengers: passengers,
+            cost: queryPrice,
+            date: dateStr,
+            catering: bookingData.catering,
+            chauffeur: bookingData.chauffeur,
+            security: bookingData.security,
+            legs: legsList,
+            boardingTime: bookingData.boardingPass?.boardingTime || "08:15",
+            gate: bookingData.boardingPass?.gate || "B3",
+            terminal: bookingData.boardingPass?.terminal || "Terminal 3"
+          };
+          setGeneratedTicket(mapped);
+          const coins = Math.max(10, Math.floor(queryPrice * 0.01));
+          setCoinsEarned(coins);
+          await fetchInitialData();
+          setCheckoutState("success");
+        }
+        return;
       }
 
-      setCheckoutState("success");
+      // 1. Create order on backend
+      const orderRes = await api.post<any>("/payments/create-order", {
+        amount: queryPrice,
+        type: type,
+        itemId: itemId,
+        userId: profile.id
+      });
+
+      const { orderId, amount, currency, keyId } = orderRes;
+      
+      const coins = Math.max(10, Math.floor(queryPrice * 0.01));
+      setCoinsEarned(coins);
+
+      const bookingDetails = {
+        itemId,
+        class: type === "commercial" ? (seat.startsWith("1") ? "first" : seat.startsWith("4") || seat.startsWith("5") || seat.startsWith("6") ? "business" : "economy") : undefined,
+        seat: type === "commercial" ? seat : undefined,
+        legs: type === "private" ? legsList : undefined,
+        catering: type === "private" ? catering : undefined,
+        chauffeur: type === "private" ? chauffeur : undefined,
+        security: type === "private" ? security : undefined
+      };
+
+      const handleVerification = async (verifyPayload: any) => {
+        setCheckoutState("processing");
+        try {
+          const verifyRes = await api.post<any>("/payments/verify", verifyPayload);
+          if (verifyRes.success) {
+            if (verifyRes.bookingId) {
+              try {
+                const bookingData = await api.get<any>(`/bookings/${verifyRes.bookingId}`);
+                if (bookingData) {
+                  const mapped: FlightBooking = {
+                    id: bookingData._id.substring(0, 8).toUpperCase(),
+                    type: bookingData.type as "commercial" | "private",
+                    airline: bookingData.type === "commercial" 
+                      ? (bookingData.flight?.airline?.airlineName || "Air India")
+                      : "SkyLuxe Private",
+                    logo: bookingData.type === "commercial"
+                      ? bookingData.flight?.airline?.logoUrl
+                      : undefined,
+                    brandColor: bookingData.flight?.airline?.brandColor || "#D4AF37",
+                    iataCode: bookingData.flight?.airline?.iataCode || "AI",
+                    pnr: bookingData.bookingReference,
+                    passengerName: `${bookingData.passengers?.[0]?.firstName || "Eashan"} ${bookingData.passengers?.[0]?.lastName || "Sterling"}`.toUpperCase(),
+                    fareClass: bookingData.class ? bookingData.class.toUpperCase() : "FIRST CLASS",
+                    boardingGroup: bookingData.class?.toLowerCase().includes("first") ? "GROUP A" : bookingData.class?.toLowerCase().includes("business") ? "GROUP B" : "GROUP C",
+                    bookingDbId: bookingData._id,
+                    aircraft: bookingData.type === "commercial"
+                      ? (bookingData.flight?.aircraft || "Airbus A350-900") 
+                      : (bookingData.aircraftModel || "Gulfstream G700"),
+                    departure: { time: "09:00", code: fromCode, city: fromCode === "BOM" ? "Mumbai" : fromCode },
+                    arrival: { time: "11:30", code: toCode, city: toCode === "DWC" ? "Dubai Al Maktoum" : toCode === "DXB" ? "Dubai" : toCode },
+                    duration: bookingData.type === "commercial" ? "3h 30m" : `${legsList.length * 3.5}h`,
+                    seatNumber: bookingData.type === "commercial" ? seat : undefined,
+                    passengers: passengers,
+                    cost: queryPrice,
+                    date: dateStr,
+                    catering: bookingData.catering,
+                    chauffeur: bookingData.chauffeur,
+                    security: bookingData.security,
+                    legs: legsList,
+                    boardingTime: bookingData.boardingPass?.boardingTime || "08:15",
+                    gate: bookingData.boardingPass?.gate || "B3",
+                    terminal: bookingData.boardingPass?.terminal || "Terminal 3"
+                  };
+                  setGeneratedTicket(mapped);
+                }
+              } catch (err) {
+                console.error("Failed to fetch booking details for pass:", err);
+                setGeneratedTicket({
+                  id: verifyRes.bookingId.substring(0, 8).toUpperCase(),
+                  type: type as "commercial" | "private",
+                  aircraft: itemId.toUpperCase(),
+                  departure: { time: "09:00", code: fromCode, city: fromCode === "BOM" ? "Mumbai" : fromCode },
+                  arrival: { time: "11:30", code: toCode, city: toCode === "DWC" ? "Dubai Al Maktoum" : toCode },
+                  duration: type === "commercial" ? "3h 30m" : `${legsList.length * 3.5}h`,
+                  seatNumber: type === "commercial" ? seat : undefined,
+                  passengers,
+                  cost: queryPrice,
+                  status: "Confirmed",
+                  date: dateStr,
+                  legs: type === "private" ? legsList : undefined,
+                  brandColor: "#D4AF37",
+                  pnr: `SKL${verifyRes.bookingId.substring(0, 6)}`,
+                  passengerName: "EASHAN STERLING",
+                  fareClass: "FIRST CLASS",
+                  boardingGroup: "GROUP A",
+                  bookingDbId: verifyRes.bookingId
+                });
+              }
+            }
+            await fetchInitialData();
+            setCheckoutState("success");
+          } else {
+            setCheckoutState("error");
+            setErrorMessage(verifyRes.message || "Payment verification failed.");
+          }
+        } catch (err: any) {
+          setCheckoutState("error");
+          setErrorMessage(err.message || "Payment signature verification failed.");
+        }
+      };
+
+      // 2. Sandbox bypass check
+      if (orderId.startsWith("order_mock_")) {
+        await handleVerification({
+          razorpay_order_id: orderId,
+          razorpay_payment_id: `pay_mock_${Date.now().toString().slice(-6)}`,
+          razorpay_signature: "sandbox_signature_bypass",
+          bookingDetails
+        });
+        return;
+      }
+
+      // 3. Load script & launch Razorpay Checkout Modal
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        setCheckoutState("error");
+        setErrorMessage("Failed to load Razorpay payment gateway script. Check your internet connection.");
+        return;
+      }
+
+      const options = {
+        key: keyId,
+        amount: amount,
+        currency: currency,
+        name: "SkyLuxe Aviation",
+        description: `Secure Settlement - ${type.toUpperCase()}`,
+        order_id: orderId,
+        handler: async function (response: any) {
+          await handleVerification({
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+            bookingDetails
+          });
+        },
+        prefill: {
+          name: profile.name,
+          email: profile.email,
+          contact: profile.phone
+        },
+        theme: {
+          color: "#D4AF37"
+        },
+        modal: {
+          ondismiss: function () {
+            setCheckoutState("idle");
+          }
+        }
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
+
     } catch (err: any) {
       setCheckoutState("error");
       setErrorMessage(err.message || "An unexpected error occurred during authorization.");
@@ -143,24 +368,24 @@ function CheckoutContent() {
                     <div className="space-y-6 border-b border-white/10 pb-8 mb-8">
                       <div className="flex justify-between items-center text-platinum/80 font-light text-sm">
                         <span>Charter rate ({legsList.length * 3.5} Flight Hours)</span>
-                        <span className="text-white">${(queryPrice - (catering.includes("Standard") ? 0 : 1500) - (chauffeur.includes("No") ? 0 : 800) - (security.includes("Standard") ? 0 : 1200)).toLocaleString()}</span>
+                        <span className="text-white">{formatAmount(queryPrice - (catering.includes("Standard") ? 0 : 1500) - (chauffeur.includes("No") ? 0 : 800) - (security.includes("Standard") ? 0 : 1200))}</span>
                       </div>
                       {!catering.includes("Standard") && (
                         <div className="flex justify-between items-center text-platinum/80 font-light text-sm">
                           <span>{catering}</span>
-                          <span className="text-white">$1,500</span>
+                          <span className="text-white">{formatAmount(1500)}</span>
                         </div>
                       )}
                       {!chauffeur.includes("No") && (
                         <div className="flex justify-between items-center text-platinum/80 font-light text-sm">
                           <span>{chauffeur}</span>
-                          <span className="text-white">$800</span>
+                          <span className="text-white">{formatAmount(800)}</span>
                         </div>
                       )}
                       {!security.includes("Standard") && (
                         <div className="flex justify-between items-center text-platinum/80 font-light text-sm">
                           <span>{security}</span>
-                          <span className="text-white">$1,200</span>
+                          <span className="text-white">{formatAmount(1200)}</span>
                         </div>
                       )}
                     </div>
@@ -175,18 +400,18 @@ function CheckoutContent() {
                     <div className="space-y-6 border-b border-white/10 pb-8 mb-8">
                       <div className="flex justify-between items-center text-platinum/80 font-light text-sm">
                         <span>Scheduled Ticket Base Price</span>
-                        <span className="text-white">${(queryPrice - (seat.startsWith("1") ? 150 : seat.startsWith("4") || seat.startsWith("5") || seat.startsWith("6") ? 80 : 0))}</span>
+                        <span className="text-white">{formatAmount(queryPrice - (seat.startsWith("1") ? 150 : seat.startsWith("4") || seat.startsWith("5") || seat.startsWith("6") ? 80 : 0))}</span>
                       </div>
                       {seat.startsWith("1") && (
                         <div className="flex justify-between items-center text-platinum/80 font-light text-sm">
                           <span>First Class Suite Allocation</span>
-                          <span className="text-white">$150</span>
+                          <span className="text-white">{formatAmount(150)}</span>
                         </div>
                       )}
                       {(seat.startsWith("4") || seat.startsWith("5") || seat.startsWith("6")) && (
                         <div className="flex justify-between items-center text-platinum/80 font-light text-sm">
                           <span>Business Flatbed Surcharge</span>
-                          <span className="text-white">$80</span>
+                          <span className="text-white">{formatAmount(80)}</span>
                         </div>
                       )}
                     </div>
@@ -201,7 +426,7 @@ function CheckoutContent() {
                     <div className="space-y-6 border-b border-white/10 pb-8 mb-8">
                       <div className="flex justify-between items-center text-platinum/80 font-light text-sm">
                         <span>Elite Access & Hourly Cost Caps</span>
-                        <span className="text-white">${queryPrice.toLocaleString()}</span>
+                        <span className="text-white">{formatAmount(queryPrice)}</span>
                       </div>
                     </div>
                   </>
@@ -210,9 +435,9 @@ function CheckoutContent() {
                 <div className="flex justify-between items-end">
                   <div>
                     <p className="text-xs text-platinum/50 uppercase tracking-widest mb-1 font-mono">Total Billed</p>
-                    <h2 className="text-5xl font-bold text-white tracking-tight">${queryPrice.toLocaleString()}</h2>
+                    <h2 className="text-5xl font-bold text-white tracking-tight">{formatAmount(queryPrice)}</h2>
                   </div>
-                  <p className="text-gold text-sm font-medium">USD</p>
+                  <p className="text-gold text-sm font-medium">{currency}</p>
                 </div>
               </motion.div>
             </div>
@@ -249,36 +474,106 @@ function CheckoutContent() {
 
                 {/* Form */}
                 <form className="space-y-6" onSubmit={handlePayment}>
-                  <div className="grid grid-cols-2 gap-4">
-                    <button type="button" className="py-4 rounded-xl bg-white text-black font-bold flex items-center justify-center gap-2 hover:bg-platinum transition-colors">
-                      Pay with <span className="font-serif">Apple Pay</span>
+                  {/* Payment Option Tabs */}
+                  <div className="flex bg-white/5 border border-white/10 p-1 rounded-xl mb-6">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentOption("wallet")}
+                      className={`flex-1 py-3 text-center text-xs font-medium rounded-lg transition-all ${
+                        paymentOption === "wallet"
+                          ? "bg-gold text-onyx font-bold"
+                          : "text-platinum/60 hover:text-white"
+                      }`}
+                    >
+                      FBO Wallet Balance
                     </button>
-                    <button type="button" className="py-4 rounded-xl bg-[#000000] border border-white/20 text-white font-bold flex items-center justify-center gap-2 hover:bg-white/5 transition-colors">
-                      Wire Transfer
+                    <button
+                      type="button"
+                      onClick={() => setPaymentOption("gateway")}
+                      className={`flex-1 py-3 text-center text-xs font-medium rounded-lg transition-all ${
+                        paymentOption === "gateway"
+                          ? "bg-gold text-onyx font-bold"
+                          : "text-platinum/60 hover:text-white"
+                      }`}
+                    >
+                      Razorpay Secure
                     </button>
                   </div>
 
-                  <div className="relative flex items-center py-4">
-                    <div className="flex-grow border-t border-white/10"></div>
-                    <span className="flex-shrink-0 mx-4 text-platinum/40 text-xs uppercase tracking-widest font-mono">Secure Settlement</span>
-                    <div className="flex-grow border-t border-white/10"></div>
-                  </div>
+                  {paymentOption === "wallet" ? (
+                    <div className="bg-white/5 border border-white/10 p-6 rounded-2xl space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-white font-medium text-sm">FBO Account Wallet</span>
+                        <span className="text-gold text-[10px] uppercase font-mono tracking-wider font-semibold border border-gold/30 bg-gold/5 px-2 py-0.5 rounded">Corporate Ledger</span>
+                      </div>
+                      <p className="text-xs text-platinum/60 font-light leading-relaxed">
+                        Settle this booking instantly using your accrued FBO wallet balance.
+                      </p>
+                      <div className="flex justify-between items-center py-2 border-b border-white/5">
+                        <span className="text-xs text-platinum/60 font-light">Available Balance</span>
+                        <span className="text-white font-mono font-medium">{formatAmount(walletBalance)}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2">
+                        <span className="text-xs text-platinum/60 font-light">Required Funds</span>
+                        <span className="text-white font-mono font-medium">{formatAmount(queryPrice)}</span>
+                      </div>
+                      {walletBalance < queryPrice && (
+                        <p className="text-red-400 text-xs mt-2 leading-relaxed bg-red-500/10 border border-red-500/20 p-3 rounded-lg">
+                          Insufficient FBO Wallet funds. Please fund your wallet or select Razorpay Secure instead.
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-white/5 border border-white/10 p-6 rounded-2xl space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-white font-medium text-sm">Payment Gateway</span>
+                        <span className="text-gold text-[10px] uppercase font-mono tracking-wider font-semibold border border-gold/30 bg-gold/5 px-2 py-0.5 rounded">Razorpay Secure</span>
+                      </div>
+                      <p className="text-xs text-platinum/60 font-light leading-relaxed">
+                        Instant settlement using UPI (Google Pay, PhonePe, Paytm), Credit/Debit Cards, Net Banking, and wallet integrations.
+                      </p>
+                      <div className="flex gap-2 items-center flex-wrap pt-2">
+                        <span className="text-[10px] text-platinum/50 bg-white/5 border border-white/10 px-2 py-1 rounded">Google Pay</span>
+                        <span className="text-[10px] text-platinum/50 bg-white/5 border border-white/10 px-2 py-1 rounded">PhonePe</span>
+                        <span className="text-[10px] text-platinum/50 bg-white/5 border border-white/10 px-2 py-1 rounded">Paytm</span>
+                        <span className="text-[10px] text-platinum/50 bg-white/5 border border-white/10 px-2 py-1 rounded">Cards / Netbanking</span>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="bg-white/5 p-5 rounded-2xl border border-white/10 flex justify-between items-center">
                     <div>
-                      <p className="text-white font-medium text-sm">Corporate Flight Wallet</p>
-                      <p className="text-platinum/50 text-xs mt-1">Available balance: ${walletBalance.toLocaleString()}</p>
+                      <p className="text-white font-medium text-sm">Aviation Settlement Value</p>
+                      <p className="text-platinum/50 text-xs mt-1">Conversion automatically processed to local currency</p>
                     </div>
-                    <span className="text-gold font-bold text-lg">${queryPrice.toLocaleString()}</span>
+                    <span className="text-gold font-bold text-lg">{formatAmount(queryPrice)}</span>
                   </div>
 
-                  <button type="submit" className="w-full py-5 rounded-xl bg-gold hover:bg-gold-light text-onyx font-bold text-lg transition-all duration-300 shadow-[0_0_20px_rgba(212,175,55,0.3)] flex items-center justify-center gap-2 group mt-8">
-                    <Lock className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                    Authorize Settlement
-                  </button>
+                  {paymentOption === "wallet" ? (
+                    <button
+                      type="submit"
+                      disabled={walletBalance < queryPrice}
+                      className={`w-full py-5 rounded-xl text-onyx font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2 group mt-8 ${
+                        walletBalance >= queryPrice
+                          ? "bg-gold hover:bg-gold-light shadow-[0_0_20px_rgba(212,175,55,0.3)] cursor-pointer"
+                          : "bg-white/10 text-platinum/40 cursor-not-allowed border border-white/5"
+                      }`}
+                    >
+                      <Lock className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                      Confirm Wallet Settlement
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      className="w-full py-5 rounded-xl bg-gold hover:bg-gold-light text-onyx font-bold text-lg transition-all duration-300 shadow-[0_0_20px_rgba(212,175,55,0.3)] flex items-center justify-center gap-2 group mt-8 cursor-pointer"
+                    >
+                      <Lock className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                      Pay via Razorpay Secure
+                    </button>
+                  )}
                   
                   <p className="text-center text-platinum/40 text-xs font-light flex items-center justify-center gap-2 mt-4 font-mono">
-                    <ShieldCheck className="w-4 h-4 text-gold/50" /> End-to-end military grade secure connection.
+                    <ShieldCheck className="w-4 h-4 text-gold/50" /> End-to-end secure gateway settlement.
                   </p>
                 </form>
               </motion.div>
@@ -318,6 +613,7 @@ function CheckoutContent() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="absolute inset-0 z-50 bg-[#020202] flex flex-col items-center justify-center p-6 overflow-y-auto"
+            data-lenis-prevent
           >
             <div className="absolute inset-0 bg-gradient-to-b from-gold/10 to-transparent pointer-events-none" />
             
@@ -339,65 +635,149 @@ function CheckoutContent() {
               </div>
 
               {type !== "membership" && generatedTicket && (
-                /* Digital Boarding Pass */
-                <div className="glass-panel rounded-3xl border border-white/10 bg-onyx/80 backdrop-blur-xl overflow-hidden shadow-2xl relative mb-6">
-                  {/* Tear line */}
-                  <div className="absolute top-[65%] left-0 right-0 border-t-2 border-dashed border-white/10" />
-                  <div className="absolute top-[65%] -left-3 w-6 h-6 bg-[#020202] rounded-full -translate-y-1/2" />
-                  <div className="absolute top-[65%] -right-3 w-6 h-6 bg-[#020202] rounded-full -translate-y-1/2" />
-                  
-                  <div className="p-8 pb-10">
-                    <div className="flex justify-between items-center mb-6">
-                      <span className="text-gold text-xs font-bold uppercase tracking-widest font-mono">
-                        {type === "private" ? "SkyLuxe Private" : `${generatedTicket.airline} Scheduled`}
-                      </span>
-                      <span className="text-white/40 text-xs font-mono">PNR: {generatedTicket.id}</span>
-                    </div>
-                    
-                    <div className="flex justify-between items-center mb-6">
-                      <div>
-                        <p className="text-4xl font-serif text-white font-bold">{generatedTicket.departure.code}</p>
-                        <p className="text-platinum/50 text-xs mt-1">{generatedTicket.departure.city}</p>
-                      </div>
-                      <div className="flex-1 flex flex-col items-center px-4">
-                        <p className="text-[10px] text-platinum/50 uppercase tracking-widest mb-1 font-mono">{generatedTicket.duration}</p>
-                        <div className="w-full border-t border-dashed border-gold/50 relative">
-                          <Plane className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 text-gold" />
+                <div className="w-full flex flex-col gap-4">
+                  {/* Digital Boarding Pass */}
+                  <div 
+                    className="glass-panel rounded-3xl border border-white/10 bg-[#121212]/90 backdrop-blur-xl overflow-hidden shadow-2xl relative transition-all duration-500 text-left"
+                    style={{ borderTop: `6px solid ${generatedTicket.brandColor || '#D4AF37'}` }}
+                  >
+                    {/* Tear line cuts */}
+                    <div className="absolute top-[68%] -left-3 w-6 h-6 bg-[#020202] rounded-full -translate-y-1/2 border-r border-white/5" />
+                    <div className="absolute top-[68%] -right-3 w-6 h-6 bg-[#020202] rounded-full -translate-y-1/2 border-l border-white/5" />
+                    <div className="absolute top-[68%] left-4 right-4 border-t-2 border-dashed border-white/10" />
+
+                    <div className="p-8 pb-10">
+                      {/* Brand Header */}
+                      <div className="flex justify-between items-center mb-8">
+                        <div className="flex items-center gap-3">
+                          {logoError ? (
+                            <div 
+                              className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white font-mono text-xs shadow-md shrink-0"
+                              style={{ backgroundColor: generatedTicket.brandColor || "#D4AF37" }}
+                            >
+                              {getTicketInitials()}
+                            </div>
+                          ) : (
+                            <img 
+                              src={generatedTicket.logo} 
+                              alt={generatedTicket.airline} 
+                              onError={() => setLogoError(true)}
+                              className="w-10 h-10 rounded-xl object-contain bg-white/10 p-1.5 border border-white/10 shrink-0" 
+                            />
+                          )}
+                          <div>
+                            <span className="text-white font-serif font-bold text-sm leading-tight block">
+                              {generatedTicket.airline || "SkyLuxe Private"}
+                            </span>
+                            <span className="text-[9px] font-mono text-platinum/40 uppercase tracking-wider block mt-0.5">
+                              {generatedTicket.type === "commercial" ? "Scheduled Carrier" : "Private Jet Operations"}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[10px] text-platinum/40 uppercase tracking-widest font-mono block">Booking Reference</span>
+                          <span className="text-gold font-mono font-bold text-sm tracking-widest">{generatedTicket.pnr || generatedTicket.id}</span>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-4xl font-serif text-white font-bold">{generatedTicket.arrival.code}</p>
-                        <p className="text-platinum/50 text-xs mt-1">{generatedTicket.arrival.city}</p>
+
+                      {/* Flight Route */}
+                      <div className="flex justify-between items-center mb-8 bg-white/5 p-4 rounded-2xl border border-white/5">
+                        <div>
+                          <p className="text-3xl font-serif text-white font-bold leading-none">{generatedTicket.departure.code}</p>
+                          <p className="text-platinum/50 text-[10px] uppercase font-mono mt-1">{generatedTicket.departure.city}</p>
+                        </div>
+                        <div className="flex-grow px-4 flex flex-col items-center">
+                          <span className="text-[9px] text-platinum/40 font-mono tracking-widest mb-1.5 uppercase">{generatedTicket.duration}</span>
+                          <div className="w-full border-t border-dashed border-gold/40 relative">
+                            <Plane className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 text-gold rotate-90" />
+                          </div>
+                          <span className="text-[9px] text-gold font-mono tracking-wider mt-1.5 uppercase">
+                            {generatedTicket.type === "commercial" ? "Nonstop" : "VIP Route"}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-3xl font-serif text-white font-bold leading-none">{generatedTicket.arrival.code}</p>
+                          <p className="text-platinum/50 text-[10px] uppercase font-mono mt-1">{generatedTicket.arrival.city}</p>
+                        </div>
+                      </div>
+
+                      {/* Flight Details Grid */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-y-4 gap-x-6 text-xs border-t border-white/5 pt-6">
+                        <div>
+                          <p className="text-[9px] text-platinum/40 uppercase tracking-widest font-mono mb-1">Passenger</p>
+                          <p className="text-white font-bold tracking-wide truncate">{generatedTicket.passengerName || "Eashan Sterling"}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] text-platinum/40 uppercase tracking-widest font-mono mb-1">Flight No</p>
+                          <p className="text-white font-bold font-mono">{generatedTicket.id}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] text-platinum/40 uppercase tracking-widest font-mono mb-1">Gate / Terminal</p>
+                          <p className="text-white font-bold">{generatedTicket.gate || "B3"} ({generatedTicket.terminal || "Terminal 3"})</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] text-platinum/40 uppercase tracking-widest font-mono mb-1">Position / Seat</p>
+                          <p className="text-gold font-bold font-mono">{generatedTicket.type === "commercial" ? `Seat ${generatedTicket.seatNumber}` : "VIP Lounge"}</p>
+                        </div>
+
+                        <div className="pt-2 border-t border-white/5">
+                          <p className="text-[9px] text-platinum/40 uppercase tracking-widest font-mono mb-1">Date</p>
+                          <p className="text-white font-bold font-mono">{generatedTicket.date}</p>
+                        </div>
+                        <div className="pt-2 border-t border-white/5">
+                          <p className="text-[9px] text-platinum/40 uppercase tracking-widest font-mono mb-1">Boarding Time</p>
+                          <p className="text-white font-bold font-mono">{generatedTicket.boardingTime || "08:15"}</p>
+                        </div>
+                        <div className="pt-2 border-t border-white/5">
+                          <p className="text-[9px] text-platinum/40 uppercase tracking-widest font-mono mb-1">Boarding Group</p>
+                          <p className="text-white font-bold">{generatedTicket.boardingGroup || "GROUP A"}</p>
+                        </div>
+                        <div className="pt-2 border-t border-white/5">
+                          <p className="text-[9px] text-platinum/40 uppercase tracking-widest font-mono mb-1">Fare Class</p>
+                          <p className="text-white font-bold truncate">{generatedTicket.fareClass || "FIRST CLASS"}</p>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <p className="text-[10px] text-platinum/50 uppercase tracking-widest mb-1 font-mono">Terminal</p>
-                        <p className="text-white font-medium text-sm">{generatedTicket.terminal}</p>
+                    {/* Tear-off Bottom Barcode Section */}
+                    <div className="px-8 py-6 bg-white/[0.02] flex flex-col md:flex-row items-center justify-between gap-6 border-t border-white/5 relative z-10">
+                      <div className="flex items-center gap-4 w-full md:w-auto">
+                        <div className="p-2 bg-white rounded-xl shrink-0">
+                          <QrCode className="w-14 h-14 text-black" />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-[9px] text-platinum/40 uppercase tracking-widest font-mono">Operations Clearance</p>
+                          <p className="text-white text-xs font-semibold mt-0.5">Civil Aviation Compliant</p>
+                          <p className="text-[10px] text-platinum/60 font-mono mt-1">Lounge Access Verified</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-[10px] text-platinum/50 uppercase tracking-widest mb-1 font-mono">Position</p>
-                        <p className="text-white font-medium text-sm">{type === "commercial" ? `Seat ${generatedTicket.seatNumber}` : "Charter"}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] text-platinum/50 uppercase tracking-widest mb-1 font-mono">Gate</p>
-                        <p className="text-white font-medium text-sm text-gold">{generatedTicket.gate}</p>
+
+                      {/* Barcode rendering */}
+                      <div className="flex flex-col items-center w-full md:w-56">
+                        <div className="h-10 w-full bg-white flex items-stretch border border-white/10 rounded overflow-hidden p-1.5">
+                          {Array.from({ length: 48 }).map((_, i) => {
+                            const isBlack = (i * 7 + 13) % 3 !== 0;
+                            const width = (i % 5 === 0) ? "w-[3px]" : (i % 3 === 0) ? "w-[2px]" : "w-[1px]";
+                            return (
+                              <div 
+                                key={i} 
+                                className={`${isBlack ? "bg-black" : "bg-transparent"} ${width} shrink-0`} 
+                              />
+                            );
+                          })}
+                        </div>
+                        <p className="text-[9px] font-mono text-platinum/40 mt-1 uppercase tracking-widest">*{generatedTicket.pnr || generatedTicket.id}*</p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="p-8 pt-10 flex items-center justify-between bg-white/5 border-t border-white/5">
-                    <div className="flex items-center gap-4">
-                      <div className="p-2 bg-white rounded-lg">
-                        <QrCode className="w-12 h-12 text-black" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-white mb-0.5">Passenger</p>
-                        <p className="text-xs text-platinum/50 font-mono">Eashan Sterling</p>
-                      </div>
-                    </div>
-                  </div>
+                  {/* PDF Download Button */}
+                  <button 
+                    onClick={handleDownloadPDF}
+                    className="w-full py-4 bg-gold hover:bg-gold-light text-onyx font-bold rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(212,175,55,0.25)] flex items-center justify-center gap-2 text-sm mt-2"
+                  >
+                    Download Official Boarding Pass (PDF)
+                  </button>
                 </div>
               )}
 

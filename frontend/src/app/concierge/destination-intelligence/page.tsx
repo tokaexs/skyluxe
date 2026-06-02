@@ -202,6 +202,7 @@ export default function DestinationIntelligence() {
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 30, stiffness: 200 }}
               className="fixed right-0 top-0 bottom-0 w-full max-w-xl bg-[#090909]/95 backdrop-blur-2xl border-l border-white/10 z-[101] shadow-2xl overflow-y-auto pt-28 pb-12 px-8 flex flex-col justify-between custom-scrollbar"
+              data-lenis-prevent
             >
               <div>
                 <div className="flex justify-between items-center mb-6">

@@ -407,7 +407,12 @@ router.get('/me', requireAuth, (req, res) => {
     email: req.user.email,
     membership: req.user.membership,
     avatar: req.user.avatar,
-    provider: req.user.provider
+    provider: req.user.provider,
+    phone: req.user.phone,
+    country: req.user.country,
+    coins: req.user.coins,
+    passportStats: req.user.passportStats || { countriesVisited: [], favoriteDestinations: [], stamps: [], flightsTaken: 0, privateJetHours: 0 },
+    achievements: req.user.achievements || []
   });
 });
 

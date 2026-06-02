@@ -28,6 +28,13 @@ export interface FlightBooking {
   boardingTime?: string;
   gate?: string;
   terminal?: string;
+  brandColor?: string;
+  iataCode?: string;
+  pnr?: string;
+  passengerName?: string;
+  fareClass?: string;
+  boardingGroup?: string;
+  bookingDbId?: string;
 }
 
 export interface Coupon {
@@ -101,6 +108,16 @@ interface SkyLuxeState {
       groundTransport: string;
       cabinAmbiance: string;
     };
+    role?: string;
+    membership?: string;
+    passportStats?: {
+      countriesVisited: string[];
+      favoriteDestinations: string[];
+      privateJetHours: number;
+      flightsTaken: number;
+      stamps: { stampId: string; title: string; country: string; date: string }[];
+    };
+    achievements?: string[];
   };
   
   // Wallet
@@ -122,7 +139,10 @@ interface SkyLuxeState {
   
   // Notifications
   notifications: SystemNotification[];
-
+ 
+  // Currency Settings
+  currency: "USD" | "INR";
+ 
   // Actions
   fetchInitialData: () => Promise<void>;
   updateProfile: (updated: Partial<SkyLuxeState["profile"]>) => Promise<void>;
@@ -138,6 +158,12 @@ interface SkyLuxeState {
   clearChatHistory: () => void;
   markNotificationRead: (id: string) => Promise<void>;
   markAllNotificationsRead: () => Promise<void>;
+  addSavedCard: (card: Omit<{ id: string; brand: string; last4: string; exp: string; primary: boolean }, "id">) => void;
+  removeSavedCard: (id: string) => void;
+  withdrawFunds: (amount: number) => Promise<boolean>;
+  setCurrency: (currency: "USD" | "INR") => void;
+  formatAmount: (amount: number) => string;
+  cancelBooking: (bookingId: string) => Promise<boolean>;
 }
 
 export const useSkyLuxeStore = create<SkyLuxeState>((set, get) => ({
@@ -156,6 +182,7 @@ export const useSkyLuxeStore = create<SkyLuxeState>((set, get) => ({
     },
   },
   
+  currency: "USD",
   walletBalance: 450000,
   
   transactions: [
@@ -291,7 +318,8 @@ export const useSkyLuxeStore = create<SkyLuxeState>((set, get) => ({
           date: b.flight ? new Date(b.flight.departure_time).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
           boardingTime: b.boarding_passes?.[0]?.boarding_time || "08:15",
           gate: b.boarding_passes?.[0]?.gate || "B3",
-          terminal: b.boarding_passes?.[0]?.terminal || "Terminal 3"
+          terminal: b.boarding_passes?.[0]?.terminal || "Terminal 3",
+          bookingDbId: b.id
         });
       }
       
@@ -314,7 +342,8 @@ export const useSkyLuxeStore = create<SkyLuxeState>((set, get) => ({
           security: c.security,
           boardingTime: "08:30",
           gate: "V1",
-          terminal: "VIP Terminal"
+          terminal: "VIP Terminal",
+          bookingDbId: c.id
         });
       }
 
@@ -332,15 +361,20 @@ export const useSkyLuxeStore = create<SkyLuxeState>((set, get) => ({
             beverages: "Macallan 18, San Pellegrino, Espresso",
             groundTransport: "Luxury SUV (Cadillac Escalade / Range Rover)",
             cabinAmbiance: "Dimmed lighting during night flights. Temperature set to 21°C."
-          }
+          },
+          role: user.role || "user",
+          membership: user.membership || "none",
+          passportStats: user.passportStats || { countriesVisited: [], favoriteDestinations: [], stamps: [], flightsTaken: 0, privateJetHours: 0 },
+          achievements: user.achievements || []
         },
         walletBalance: wallet ? wallet.balance : 0.0,
         transactions: wallet ? wallet.transactions.map((tx: any) => ({
           id: tx.id.substring(0, 8).toUpperCase(),
-          title: tx.description,
-          date: new Date(tx.created_at).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }),
-          amount: tx.type === "debit" ? -tx.amount : tx.amount,
-          type: tx.type
+          title: tx.title || tx.description || "Aviation Transaction",
+          date: new Date(tx.date || tx.created_at || Date.now()).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }),
+          amount: tx.type === "debit" ? -Math.abs(tx.amount) : Math.abs(tx.amount),
+          type: tx.type,
+          invoice: tx.invoice
         })) : [],
         coins: rewards ? rewards.coins_balance : 0,
         coupons: rewards ? rewards.coupons.map((cp: any) => {
@@ -552,4 +586,53 @@ export const useSkyLuxeStore = create<SkyLuxeState>((set, get) => ({
       console.error("Failed to read all notifications:", e);
     }
   },
+  addSavedCard: (card) => set((state) => {
+    const updatedCards = state.savedCards.map(c => card.primary ? { ...c, primary: false } : c);
+    return {
+      savedCards: [...updatedCards, { ...card, id: "c-" + Date.now() }]
+    };
+  }),
+  removeSavedCard: (id) => set((state) => ({
+    savedCards: state.savedCards.filter(c => c.id !== id)
+  })),
+  withdrawFunds: async (amount) => {
+    const profile = get().profile;
+    if (!profile.id) return false;
+    try {
+      await api.post(`/wallet/withdraw?user_id=${profile.id}`, { amount });
+      await get().fetchInitialData();
+      return true;
+    } catch (e) {
+      console.error("Failed to withdraw funds:", e);
+      return false;
+    }
+  },
+  setCurrency: (currency) => set({ currency }),
+  formatAmount: (amount) => {
+    const isUSD = get().currency === "USD";
+    const absVal = Math.abs(amount);
+    if (isUSD) {
+      return amount < 0 
+        ? `-$${absVal.toLocaleString()}` 
+        : `$${amount.toLocaleString()}`;
+    } else {
+      const inrValue = Math.round(absVal * 83);
+      return amount < 0 
+        ? `-₹${inrValue.toLocaleString()}` 
+        : `₹${Math.round(amount * 83).toLocaleString()}`;
+    }
+  },
+  cancelBooking: async (bookingId: string) => {
+    const flights = get().flights;
+    const flight = flights.find(f => f.id === bookingId || f.bookingDbId === bookingId);
+    const dbId = flight?.bookingDbId || bookingId;
+    try {
+      await api.post(`/bookings/${dbId}/cancel`);
+      await get().fetchInitialData();
+      return true;
+    } catch (e) {
+      console.error("Failed to cancel booking:", e);
+      return false;
+    }
+  }
 }));
