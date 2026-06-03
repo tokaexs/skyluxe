@@ -368,18 +368,18 @@ function CheckoutContent() {
                     <div className="space-y-6 border-b border-white/10 pb-8 mb-8">
                       <div className="flex justify-between items-center text-platinum/80 font-light text-sm">
                         <span>Charter rate ({legsList.length * 3.5} Flight Hours)</span>
-                        <span className="text-white">{formatAmount(queryPrice - (catering.includes("Standard") ? 0 : 1500) - (chauffeur.includes("No") ? 0 : 800) - (security.includes("Standard") ? 0 : 1200))}</span>
+                        <span className="text-white">{formatAmount(queryPrice - (catering.includes("Michelin") ? 1500 : catering.includes("Caviar") ? 3000 : 0) - (chauffeur.includes("Maybach") ? 800 : chauffeur.includes("Helicopter") ? 2500 : 0) - (security.includes("Executive") ? 1200 : 0))}</span>
                       </div>
                       {!catering.includes("Standard") && (
                         <div className="flex justify-between items-center text-platinum/80 font-light text-sm">
                           <span>{catering}</span>
-                          <span className="text-white">{formatAmount(1500)}</span>
+                          <span className="text-white">{formatAmount(catering.includes("Michelin") ? 1500 : 3000)}</span>
                         </div>
                       )}
                       {!chauffeur.includes("No") && (
                         <div className="flex justify-between items-center text-platinum/80 font-light text-sm">
                           <span>{chauffeur}</span>
-                          <span className="text-white">{formatAmount(800)}</span>
+                          <span className="text-white">{formatAmount(chauffeur.includes("Maybach") ? 800 : 2500)}</span>
                         </div>
                       )}
                       {!security.includes("Standard") && (

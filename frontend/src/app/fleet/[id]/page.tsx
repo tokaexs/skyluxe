@@ -6,6 +6,7 @@ import { ArrowRight, Plane, Users, Zap, ShieldCheck, Plus, Trash2 } from "lucide
 import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSkyLuxeStore } from "@/store/skyluxeStore";
 
 const jetDatabase: Record<string, any> = {
   "gulfstream-g700": { name: "Gulfstream G700", class: "Ultra Long Range", pax: 19, range: "7,500 nm", speed: "Mach 0.925", hourlyRate: 14000, img: "https://images.unsplash.com/photo-1540962351504-03099e0a754b?q=80&w=2500" },
@@ -19,6 +20,7 @@ const jetDatabase: Record<string, any> = {
 export default function JetConfiguration() {
   const params = useParams();
   const router = useRouter();
+  const { formatAmount } = useSkyLuxeStore();
   const id = typeof params.id === 'string' ? params.id : 'gulfstream-g700';
   const jet = jetDatabase[id] || jetDatabase["gulfstream-g700"];
 
@@ -188,11 +190,11 @@ export default function JetConfiguration() {
                   <select 
                     value={catering}
                     onChange={(e) => setCatering(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:border-gold/50 transition-colors appearance-none font-light outline-none"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:border-gold/50 transition-colors appearance-none font-light outline-none [&>option]:bg-onyx [&>option]:text-white"
                   >
-                    <option value="Standard VIP Catering">Standard VIP Catering</option>
-                    <option value="Michelin-Grade Fine Dining (+$1,500)">Michelin-Grade Fine Dining (+$1,500)</option>
-                    <option value="Caviar & Champagne Tier (+$3,000)">Caviar & Champagne Tier (+$3,000)</option>
+                    <option value="Standard VIP Catering" className="bg-zinc-900 text-white">Standard VIP Catering</option>
+                    <option value="Michelin-Grade Fine Dining" className="bg-zinc-900 text-white">Michelin-Grade Fine Dining (+{formatAmount(1500)})</option>
+                    <option value="Caviar & Champagne Tier" className="bg-zinc-900 text-white">Caviar & Champagne Tier (+{formatAmount(3000)})</option>
                   </select>
                 </div>
                 <div>
@@ -200,11 +202,11 @@ export default function JetConfiguration() {
                   <select 
                     value={chauffeur}
                     onChange={(e) => setChauffeur(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:border-gold/50 transition-colors appearance-none font-light outline-none"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:border-gold/50 transition-colors appearance-none font-light outline-none [&>option]:bg-onyx [&>option]:text-white"
                   >
-                    <option value="No Transport Required">No Transport Required</option>
-                    <option value="Maybach S-Class Chauffeur (+$800)">Maybach S-Class Chauffeur (+$800)</option>
-                    <option value="Helicopter Terminal Transfer (+$2,500)">Helicopter Terminal Transfer (+$2,500)</option>
+                    <option value="No Transport Required" className="bg-zinc-900 text-white">No Transport Required</option>
+                    <option value="Maybach S-Class Chauffeur" className="bg-zinc-900 text-white">Maybach S-Class Chauffeur (+{formatAmount(800)})</option>
+                    <option value="Helicopter Terminal Transfer" className="bg-zinc-900 text-white">Helicopter Terminal Transfer (+{formatAmount(2500)})</option>
                   </select>
                 </div>
                 <div>
@@ -212,10 +214,10 @@ export default function JetConfiguration() {
                   <select 
                     value={security}
                     onChange={(e) => setSecurity(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:border-gold/50 transition-colors appearance-none font-light outline-none"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:border-gold/50 transition-colors appearance-none font-light outline-none [&>option]:bg-onyx [&>option]:text-white"
                   >
-                    <option value="Standard Terminal Security">Standard Terminal Security</option>
-                    <option value="Executive Protection Officer (+$1,200)">Executive Protection Officer (+$1,200)</option>
+                    <option value="Standard Terminal Security" className="bg-zinc-900 text-white">Standard Terminal Security</option>
+                    <option value="Executive Protection Officer" className="bg-zinc-900 text-white">Executive Protection Officer (+{formatAmount(1200)})</option>
                   </select>
                 </div>
                 <div>
@@ -255,7 +257,7 @@ export default function JetConfiguration() {
                 <div className="w-full h-px bg-white/10 my-4" />
                 <div className="flex justify-between items-center">
                   <span className="text-platinum/80">Estimated Price</span>
-                  <span className="text-2xl font-bold text-gold">${price.toLocaleString()}</span>
+                  <span className="text-2xl font-bold text-gold">{formatAmount(price)}</span>
                 </div>
                 <p className="text-[10px] text-platinum/40 font-light mt-1 text-right font-mono">
                   Includes landing fees, fuel surcharges, and selected upgrades.

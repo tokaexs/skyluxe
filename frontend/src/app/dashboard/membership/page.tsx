@@ -314,7 +314,7 @@ export default function MembershipManagement() {
                     </div>
 
                     <div className="text-right">
-                      <p className="text-lg font-bold text-white font-mono">${plan.price.toLocaleString()}</p>
+                      <p className="text-lg font-bold text-white font-mono">{formatAmount(plan.price)}</p>
                       <p className="text-[10px] text-platinum/40 uppercase tracking-widest font-mono">Per Year</p>
                     </div>
                   </div>
@@ -359,7 +359,7 @@ export default function MembershipManagement() {
                       {hasInsufficientBalance && (
                         <p className="text-[10px] text-red-400/80 flex items-center gap-1 justify-center mt-1">
                           <AlertTriangle className="w-3 h-3 shrink-0" />
-                          Required: ${plan.price.toLocaleString()} (Short: ${(plan.price - walletBalance).toLocaleString()})
+                          Required: {formatAmount(plan.price)} (Short: {formatAmount(plan.price - walletBalance)})
                         </p>
                       )}
                     </div>
