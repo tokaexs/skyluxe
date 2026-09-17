@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { api } from "@/lib/api";
+import { api, getAuthToken } from "@/lib/api";
 
 export interface FlightLeg {
   from: string;
@@ -287,6 +287,12 @@ export const useSkyLuxeStore = create<SkyLuxeState>((set, get) => ({
 
   fetchInitialData: async () => {
     try {
+      const token = getAuthToken();
+      if (!token) {
+        // No custom JWT token present (e.g. Clerk authenticated or unauthenticated). Skip backend /auth/me request.
+        return;
+      }
+
       // 1. Fetch current user from JWT token if available
       const user = await api.get<any>("/auth/me").catch(() => null);
       if (!user || !user.id) return;

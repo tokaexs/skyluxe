@@ -8,6 +8,10 @@ function getCookie(name: string): string | null {
   return null;
 }
 
+export function getAuthToken(): string | null {
+  return getCookie("skyluxe_auth_token");
+}
+
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = getCookie("skyluxe_auth_token");
   const headers = {
