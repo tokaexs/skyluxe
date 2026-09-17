@@ -14,6 +14,7 @@ import GlassNavbar from "@/components/ui/GlassNavbar";
 import LuxuryDatePicker from "@/components/ui/LuxuryDatePicker";
 import { useAuth } from "@/context/AuthContext";
 import { useSkyLuxeStore } from "@/store/skyluxeStore";
+import { useUser } from "@clerk/nextjs";
 
 
 // ─── Testimonials ──────────────────────────────────────────────────────────
@@ -136,11 +137,18 @@ function AnimatedRouteLine({ x1, y1, x2, y2, delay }: { x1: number; y1: number; 
 
 // ─── Main Component ──────────────────────────────────────────────────────
 function HomeContent() {
+  const { user } = useUser();
   const { isAuthenticated, logout, isLoading } = useAuth();
-  const { profile, flights, formatAmount, walletBalance, fetchInitialData, coins } = useSkyLuxeStore();
+  const { profile, flights, formatAmount, walletBalance, fetchInitialData, coins, syncUserFromClerk } = useSkyLuxeStore();
   const searchParams = useSearchParams();
   const forceLanding = searchParams.get("landing") === "true";
   
+  useEffect(() => {
+    if (user) {
+      syncUserFromClerk(user);
+    }
+  }, [user, syncUserFromClerk]);
+
   useEffect(() => {
     if (isAuthenticated) {
       fetchInitialData();
@@ -239,7 +247,7 @@ function HomeContent() {
   const activeTier = (profile?.membership || "none").toLowerCase().replace(" ", "_");
   const isMember = activeTier !== "none";
 
-  if (isAuthenticated && (isLoading || !profile?.id)) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-onyx flex flex-col items-center justify-center text-white">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gold mb-4"></div>
