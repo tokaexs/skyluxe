@@ -1,0 +1,40 @@
+import { dark } from "@clerk/themes";
+
+export const skyluxeClerkAppearance = {
+  baseTheme: dark,
+  variables: {
+    colorBackground: "#0d0d0d",
+    colorInputBackground: "#18181b",
+    colorInputText: "#ffffff",
+    colorText: "#ffffff",
+    colorTextSecondary: "#a1a1aa",
+    colorPrimary: "#D4AF37",
+    colorTextOnPrimaryBackground: "#000000",
+    colorDanger: "#ef4444",
+    colorSuccess: "#10b981",
+    borderRadius: "0.75rem",
+    fontFamily: '"Satoshi", -apple-system, BlinkMacSystemFont, sans-serif',
+  },
+  elements: {
+    card: "!bg-[#0d0d0d] !border !border-white/10 !shadow-2xl rounded-3xl p-8 max-w-[460px] w-full",
+    rootBox: "w-full flex justify-center",
+    headerTitle: "!text-white font-serif !text-2xl font-bold tracking-tight",
+    headerSubtitle: "!text-zinc-400 text-xs font-light mt-1",
+    socialButtonsBlockButton: "!bg-[#18181b] !border !border-zinc-800 hover:!border-[#D4AF37]/50 hover:!bg-zinc-800 !text-white rounded-xl transition-all duration-300 py-3",
+    socialButtonsBlockButtonText: "!text-zinc-200 text-sm font-medium",
+    dividerLine: "!bg-zinc-800",
+    dividerText: "!text-zinc-500 text-[10px] uppercase tracking-widest font-mono",
+    formFieldLabel: "!text-zinc-300 text-xs font-mono uppercase tracking-wider mb-1.5",
+    formFieldInput: "!bg-[#18181b] !border !border-zinc-800 !text-white rounded-xl focus:!border-[#D4AF37] focus:!ring-1 focus:!ring-[#D4AF37]/50 transition-all text-sm py-3 px-4 placeholder:text-zinc-600",
+    formButtonPrimary: "!bg-gradient-to-r !from-[#D4AF37] !via-[#E6CA65] !to-[#F3E5AB] !text-black font-bold text-sm rounded-xl py-3.5 !shadow-[0_0_25px_rgba(212,175,55,0.35)] hover:!shadow-[0_0_35px_rgba(212,175,55,0.6)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 !border-0 cursor-pointer",
+    footerActionLink: "!text-[#D4AF37] hover:!text-[#F3E5AB] font-semibold transition-colors ml-1",
+    footerActionText: "!text-zinc-400 text-xs",
+    footer: "!border-t !border-zinc-800/80 pt-5 mt-4",
+    identityPreviewText: "!text-white font-medium",
+    identityPreviewEditButton: "!text-[#D4AF37] hover:!text-[#F3E5AB] text-xs font-mono",
+    formFieldSuccessText: "!text-emerald-400 text-xs",
+    formFieldErrorText: "!text-rose-400 text-xs mt-1",
+    alertText: "!text-rose-300 text-xs",
+    alert: "!bg-rose-950/40 !border !border-rose-800/40 rounded-xl p-3",
+  }
+};
