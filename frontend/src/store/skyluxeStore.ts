@@ -287,9 +287,9 @@ export const useSkyLuxeStore = create<SkyLuxeState>((set, get) => ({
 
   fetchInitialData: async () => {
     try {
-      // 1. Fetch current user from JWT token
-      const user = await api.get<any>("/auth/me");
-      if (!user) return;
+      // 1. Fetch current user from JWT token if available
+      const user = await api.get<any>("/auth/me").catch(() => null);
+      if (!user || !user.id) return;
       
       const userId = user.id;
 
