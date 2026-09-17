@@ -1,8 +1,10 @@
+import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import "./globals.css";
 import SmoothScroll from "@/components/animations/SmoothScroll";
 import Footer from "@/components/ui/Footer";
 import { AuthProvider } from "@/context/AuthContext";
+import TourGuide from "@/components/ui/TourGuide";
 
 export const metadata: Metadata = {
   title: "SkyLuxe Ecosystem | Premium Aviation & Travel",
@@ -20,12 +22,15 @@ export default function RootLayout({
         <link href="https://api.fontshare.com/v2/css?f[]=clash-display@200,300,400,500,600,700&f[]=satoshi@300,400,500,700,900&display=swap" rel="stylesheet" />
       </head>
       <body className="bg-onyx text-platinum selection:bg-gold/30">
-        <AuthProvider>
+        <ClerkProvider>
+          <AuthProvider>
           <SmoothScroll>
-            {children}
-            <Footer />
+          {children}
+          <Footer />
+          <TourGuide />
           </SmoothScroll>
-        </AuthProvider>
+          </AuthProvider>
+        </ClerkProvider>
       </body>
     </html>
   );

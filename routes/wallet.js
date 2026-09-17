@@ -60,6 +60,10 @@ router.post('/topup', async (req, res) => {
 
     await user.save();
 
+    req.user = user;
+    const { trackEvent } = require('../lib/analytics');
+    await trackEvent(req, 'wallet_topup', { amount: Number(amount) });
+
     res.json({
       message: 'Wallet funded successfully',
       balance: user.wallet.balance,
@@ -105,6 +109,10 @@ router.post('/withdraw', async (req, res) => {
     });
 
     await user.save();
+
+    req.user = user;
+    const { trackEvent } = require('../lib/analytics');
+    await trackEvent(req, 'wallet_payment', { amount: Number(amount), purpose: 'withdrawal' });
 
     res.json({
       message: 'Withdrawal processed successfully',

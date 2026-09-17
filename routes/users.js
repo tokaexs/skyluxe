@@ -1,6 +1,28 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const requireAuth = require('../middleware/requireAuth');
+const { generatePassportPDF } = require('../lib/passportGenerator');
+const path = require('path');
+
+// Download Passport PDF
+router.get('/passport/download', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.userId || req.user.id || req.user._id;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const pdfPath = await generatePassportPDF(user);
+    const absolutePath = path.join(__dirname, '..', pdfPath);
+    
+    res.download(absolutePath, `sovereign-passport-${user._id}.pdf`);
+  } catch (error) {
+    console.error('Passport PDF generation error:', error);
+    res.status(500).json({ message: 'Server error generating passport PDF' });
+  }
+});
 
 // Update user details
 router.patch('/:id', async (req, res) => {
@@ -22,6 +44,9 @@ router.patch('/:id', async (req, res) => {
     if (country !== undefined) user.country = country;
 
     await user.save();
+
+    const { trackEvent } = require('../lib/analytics');
+    await trackEvent(req, 'update_profile');
 
     res.json({
       message: 'Profile updated successfully',

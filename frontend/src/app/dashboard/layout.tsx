@@ -41,10 +41,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     links.push({ name: "Admin Airlines", href: "/dashboard/admin/airlines", icon: ShieldCheck });
   }
 
+  // Allow admin to access the ARIS control tower
+  if (profile?.role === "admin" || profile?.role === "executive" || profile?.role === "ceo") {
+    links.push({ name: "Reintelligence (ARIS)", href: "/dashboard/aris", icon: Activity });
+  }
+
   return (
     <div className="min-h-screen bg-onyx flex select-none">
       {/* Sidebar */}
-      <aside data-lenis-prevent className="w-64 border-r border-white/10 bg-[#020202] flex flex-col relative z-20 shrink-0 h-screen sticky top-0 overflow-y-auto custom-scrollbar">
+      <aside id="tour-db-sidebar" data-lenis-prevent className="w-64 border-r border-white/10 bg-[#020202] flex flex-col relative z-20 shrink-0 h-screen sticky top-0 overflow-y-auto custom-scrollbar">
         <div className="p-8 pb-6">
           <Link href="/" className="text-2xl font-serif font-bold text-white tracking-tight flex items-center gap-2">
             <Plane className="w-6 h-6 text-gold -rotate-45" /> SkyLuxe

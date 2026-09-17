@@ -39,7 +39,7 @@ export default function DashboardOverview() {
         </button>
       </div>
       {/* Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div id="tour-db-metrics" className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <MetricCard title="Total Flight Hours Secured" value={`${totalFlightHours} hrs`} trend="+12 hours this month" icon={Clock} />
         <MetricCard title="Upcoming Missions" value={upcomingFlights.length.toString()} trend={nextFlight ? `Next: ${nextFlight.arrival.city}` : "No missions scheduled"} icon={Plane} />
         <MetricCard title="Aviation Wallet Balance" value={formattedBalance} trend="Settlement Autopay Active" icon={CreditCard} />
@@ -49,7 +49,7 @@ export default function DashboardOverview() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* Next Flight Card */}
-        <div className="lg:col-span-2 glass-panel p-8 rounded-3xl border border-white/10 relative overflow-hidden group">
+        <div id="tour-db-active-flight" className="lg:col-span-2 glass-panel p-8 rounded-3xl border border-white/10 relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-64 h-64 bg-gold/10 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/4" />
           
           {nextFlight ? (

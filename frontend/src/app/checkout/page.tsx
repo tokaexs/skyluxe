@@ -29,7 +29,7 @@ const loadRazorpayScript = () => {
 function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const type = searchParams.get("type") || "private";
   const itemId = searchParams.get("id") || "gulfstream-g700";
   const seat = searchParams.get("seat") || "";
@@ -41,7 +41,8 @@ function CheckoutContent() {
   const chauffeur = searchParams.get("chauffeur") || "No Transport Required";
   const security = searchParams.get("security") || "Standard Terminal Security";
   const passengers = Number(searchParams.get("passengers")) || 3;
-  
+  const seatRow = seat ? parseInt(seat.match(/^(\d+)/)?.[1] || "0") : 0;
+
   let legsList = [];
   try {
     const rawLegs = searchParams.get("legs");
@@ -89,7 +90,7 @@ function CheckoutContent() {
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
     setCheckoutState("processing");
-    
+
     try {
       if (!profile || !profile.id) {
         setCheckoutState("error");
@@ -109,6 +110,7 @@ function CheckoutContent() {
           flight_id: itemId,
           total_amount: queryPrice,
           seat_number: seat,
+          class: seatRow > 0 && seatRow <= 3 ? "first" : seatRow >= 4 && seatRow <= 7 ? "business" : "economy",
           passengers: [{
             firstName: profile.name.split(" ")[0] || "Eashan",
             lastName: profile.name.split(" ")[1] || "Sterling",
@@ -130,7 +132,7 @@ function CheckoutContent() {
           const mapped: FlightBooking = {
             id: bookingData._id.substring(0, 8).toUpperCase(),
             type: bookingData.type as "commercial" | "private",
-            airline: bookingData.type === "commercial" 
+            airline: bookingData.type === "commercial"
               ? (bookingData.flight?.airline?.airlineName || "Air India")
               : "SkyLuxe Private",
             logo: bookingData.type === "commercial"
@@ -144,7 +146,7 @@ function CheckoutContent() {
             boardingGroup: bookingData.class?.toLowerCase().includes("first") ? "GROUP A" : bookingData.class?.toLowerCase().includes("business") ? "GROUP B" : "GROUP C",
             bookingDbId: bookingData._id,
             aircraft: bookingData.type === "commercial"
-              ? (bookingData.flight?.aircraft || "Airbus A350-900") 
+              ? (bookingData.flight?.aircraft || "Airbus A350-900")
               : (bookingData.aircraftModel || "Gulfstream G700"),
             departure: { time: "09:00", code: fromCode, city: fromCode === "BOM" ? "Mumbai" : fromCode },
             arrival: { time: "11:30", code: toCode, city: toCode === "DWC" ? "Dubai Al Maktoum" : toCode === "DXB" ? "Dubai" : toCode },
@@ -152,6 +154,7 @@ function CheckoutContent() {
             seatNumber: bookingData.type === "commercial" ? seat : undefined,
             passengers: passengers,
             cost: queryPrice,
+            status: bookingData.status || "Confirmed",
             date: dateStr,
             catering: bookingData.catering,
             chauffeur: bookingData.chauffeur,
@@ -179,13 +182,13 @@ function CheckoutContent() {
       });
 
       const { orderId, amount, currency, keyId } = orderRes;
-      
+
       const coins = Math.max(10, Math.floor(queryPrice * 0.01));
       setCoinsEarned(coins);
 
       const bookingDetails = {
         itemId,
-        class: type === "commercial" ? (seat.startsWith("1") ? "first" : seat.startsWith("4") || seat.startsWith("5") || seat.startsWith("6") ? "business" : "economy") : undefined,
+        class: type === "commercial" ? (seatRow > 0 && seatRow <= 3 ? "first" : seatRow >= 4 && seatRow <= 7 ? "business" : "economy") : undefined,
         seat: type === "commercial" ? seat : undefined,
         legs: type === "private" ? legsList : undefined,
         catering: type === "private" ? catering : undefined,
@@ -205,7 +208,7 @@ function CheckoutContent() {
                   const mapped: FlightBooking = {
                     id: bookingData._id.substring(0, 8).toUpperCase(),
                     type: bookingData.type as "commercial" | "private",
-                    airline: bookingData.type === "commercial" 
+                    airline: bookingData.type === "commercial"
                       ? (bookingData.flight?.airline?.airlineName || "Air India")
                       : "SkyLuxe Private",
                     logo: bookingData.type === "commercial"
@@ -219,7 +222,7 @@ function CheckoutContent() {
                     boardingGroup: bookingData.class?.toLowerCase().includes("first") ? "GROUP A" : bookingData.class?.toLowerCase().includes("business") ? "GROUP B" : "GROUP C",
                     bookingDbId: bookingData._id,
                     aircraft: bookingData.type === "commercial"
-                      ? (bookingData.flight?.aircraft || "Airbus A350-900") 
+                      ? (bookingData.flight?.aircraft || "Airbus A350-900")
                       : (bookingData.aircraftModel || "Gulfstream G700"),
                     departure: { time: "09:00", code: fromCode, city: fromCode === "BOM" ? "Mumbai" : fromCode },
                     arrival: { time: "11:30", code: toCode, city: toCode === "DWC" ? "Dubai Al Maktoum" : toCode === "DXB" ? "Dubai" : toCode },
@@ -227,6 +230,7 @@ function CheckoutContent() {
                     seatNumber: bookingData.type === "commercial" ? seat : undefined,
                     passengers: passengers,
                     cost: queryPrice,
+                    status: bookingData.status || "Confirmed",
                     date: dateStr,
                     catering: bookingData.catering,
                     chauffeur: bookingData.chauffeur,
@@ -344,7 +348,7 @@ function CheckoutContent() {
 
       <AnimatePresence mode="wait">
         {checkoutState === "idle" ? (
-          <motion.div 
+          <motion.div
             key="checkout-form"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -359,7 +363,7 @@ function CheckoutContent() {
                   <Lock className="w-4 h-4 text-gold" />
                   <span className="text-gold text-xs font-semibold tracking-wider uppercase">Secure Gateway</span>
                 </div>
-                
+
                 {type === "private" && (
                   <>
                     <h1 className="text-4xl font-serif font-bold text-white mb-2">{itemId.toUpperCase().replace("-", " ")}</h1>
@@ -400,15 +404,15 @@ function CheckoutContent() {
                     <div className="space-y-6 border-b border-white/10 pb-8 mb-8">
                       <div className="flex justify-between items-center text-platinum/80 font-light text-sm">
                         <span>Scheduled Ticket Base Price</span>
-                        <span className="text-white">{formatAmount(queryPrice - (seat.startsWith("1") ? 150 : seat.startsWith("4") || seat.startsWith("5") || seat.startsWith("6") ? 80 : 0))}</span>
+                        <span className="text-white">{formatAmount(queryPrice - (seatRow > 0 && seatRow <= 3 ? 150 : seatRow >= 4 && seatRow <= 7 ? 80 : 0))}</span>
                       </div>
-                      {seat.startsWith("1") && (
+                      {seatRow > 0 && seatRow <= 3 && (
                         <div className="flex justify-between items-center text-platinum/80 font-light text-sm">
                           <span>First Class Suite Allocation</span>
                           <span className="text-white">{formatAmount(150)}</span>
                         </div>
                       )}
-                      {(seat.startsWith("4") || seat.startsWith("5") || seat.startsWith("6")) && (
+                      {seatRow >= 4 && seatRow <= 7 && (
                         <div className="flex justify-between items-center text-platinum/80 font-light text-sm">
                           <span>Business Flatbed Surcharge</span>
                           <span className="text-white">{formatAmount(80)}</span>
@@ -444,9 +448,9 @@ function CheckoutContent() {
 
             {/* Right Panel: Payments */}
             <div className="w-full md:w-7/12 p-8 md:p-16 flex flex-col justify-center items-center h-full">
-              <motion.div 
-                initial={{ opacity: 0, y: 30 }} 
-                animate={{ opacity: 1, y: 0 }} 
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
                 className="w-full max-w-lg"
               >
@@ -454,7 +458,7 @@ function CheckoutContent() {
                 <div className="w-full aspect-[1.586] rounded-3xl mb-10 relative overflow-hidden p-8 flex flex-col justify-between shadow-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-2xl">
                   <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1620121478247-ec786b9be2fa?q=80&w=1000&auto=format&fit=crop')] opacity-20 mix-blend-overlay" />
                   <div className="absolute top-0 right-0 w-64 h-64 bg-gold/20 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/4" />
-                  
+
                   <div className="relative z-10 flex justify-between items-start">
                     <Zap className="w-8 h-8 text-gold" />
                     <div className="flex gap-2">
@@ -462,7 +466,7 @@ function CheckoutContent() {
                       <span className="w-8 h-8 rounded-full bg-yellow-500/80 mix-blend-screen -ml-4" />
                     </div>
                   </div>
-                  
+
                   <div className="relative z-10">
                     <p className="text-white/60 font-mono text-sm mb-2 tracking-[0.2em]">•••• •••• •••• 4242</p>
                     <div className="flex justify-between items-end">
@@ -479,22 +483,20 @@ function CheckoutContent() {
                     <button
                       type="button"
                       onClick={() => setPaymentOption("wallet")}
-                      className={`flex-1 py-3 text-center text-xs font-medium rounded-lg transition-all ${
-                        paymentOption === "wallet"
-                          ? "bg-gold text-onyx font-bold"
-                          : "text-platinum/60 hover:text-white"
-                      }`}
+                      className={`flex-1 py-3 text-center text-xs font-medium rounded-lg transition-all ${paymentOption === "wallet"
+                        ? "bg-gold text-onyx font-bold"
+                        : "text-platinum/60 hover:text-white"
+                        }`}
                     >
                       FBO Wallet Balance
                     </button>
                     <button
                       type="button"
                       onClick={() => setPaymentOption("gateway")}
-                      className={`flex-1 py-3 text-center text-xs font-medium rounded-lg transition-all ${
-                        paymentOption === "gateway"
-                          ? "bg-gold text-onyx font-bold"
-                          : "text-platinum/60 hover:text-white"
-                      }`}
+                      className={`flex-1 py-3 text-center text-xs font-medium rounded-lg transition-all ${paymentOption === "gateway"
+                        ? "bg-gold text-onyx font-bold"
+                        : "text-platinum/60 hover:text-white"
+                        }`}
                     >
                       Razorpay Secure
                     </button>
@@ -553,11 +555,10 @@ function CheckoutContent() {
                     <button
                       type="submit"
                       disabled={walletBalance < queryPrice}
-                      className={`w-full py-5 rounded-xl text-onyx font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2 group mt-8 ${
-                        walletBalance >= queryPrice
-                          ? "bg-gold hover:bg-gold-light shadow-[0_0_20px_rgba(212,175,55,0.3)] cursor-pointer"
-                          : "bg-white/10 text-platinum/40 cursor-not-allowed border border-white/5"
-                      }`}
+                      className={`w-full py-5 rounded-xl text-onyx font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2 group mt-8 ${walletBalance >= queryPrice
+                        ? "bg-gold hover:bg-gold-light shadow-[0_0_20px_rgba(212,175,55,0.3)] cursor-pointer"
+                        : "bg-white/10 text-platinum/40 cursor-not-allowed border border-white/5"
+                        }`}
                     >
                       <Lock className="w-5 h-5 group-hover:scale-110 transition-transform" />
                       Confirm Wallet Settlement
@@ -571,7 +572,7 @@ function CheckoutContent() {
                       Pay via Razorpay Secure
                     </button>
                   )}
-                  
+
                   <p className="text-center text-platinum/40 text-xs font-light flex items-center justify-center gap-2 mt-4 font-mono">
                     <ShieldCheck className="w-4 h-4 text-gold/50" /> End-to-end secure gateway settlement.
                   </p>
@@ -580,7 +581,7 @@ function CheckoutContent() {
             </div>
           </motion.div>
         ) : checkoutState === "processing" ? (
-          <motion.div 
+          <motion.div
             key="processing"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -592,7 +593,7 @@ function CheckoutContent() {
             <p className="text-platinum/50 font-light">Updating private ledger networks...</p>
           </motion.div>
         ) : checkoutState === "error" ? (
-          <motion.div 
+          <motion.div
             key="error"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -608,7 +609,7 @@ function CheckoutContent() {
             </button>
           </motion.div>
         ) : (
-          <motion.div 
+          <motion.div
             key="success"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -616,15 +617,15 @@ function CheckoutContent() {
             data-lenis-prevent
           >
             <div className="absolute inset-0 bg-gradient-to-b from-gold/10 to-transparent pointer-events-none" />
-            
-            <motion.div 
+
+            <motion.div
               initial={{ scale: 0.8, opacity: 0, y: 50 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               transition={{ type: "spring", bounce: 0.4, duration: 1 }}
               className="relative z-10 w-full max-w-md my-8"
             >
               <div className="text-center mb-8">
-                <motion.div 
+                <motion.div
                   initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3, type: "spring" }}
                   className="w-20 h-20 bg-green-500/20 border border-green-500/50 rounded-full flex items-center justify-center mx-auto mb-6"
                 >
@@ -637,7 +638,7 @@ function CheckoutContent() {
               {type !== "membership" && generatedTicket && (
                 <div className="w-full flex flex-col gap-4">
                   {/* Digital Boarding Pass */}
-                  <div 
+                  <div
                     className="glass-panel rounded-3xl border border-white/10 bg-[#121212]/90 backdrop-blur-xl overflow-hidden shadow-2xl relative transition-all duration-500 text-left"
                     style={{ borderTop: `6px solid ${generatedTicket.brandColor || '#D4AF37'}` }}
                   >
@@ -651,18 +652,18 @@ function CheckoutContent() {
                       <div className="flex justify-between items-center mb-8">
                         <div className="flex items-center gap-3">
                           {logoError ? (
-                            <div 
+                            <div
                               className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white font-mono text-xs shadow-md shrink-0"
                               style={{ backgroundColor: generatedTicket.brandColor || "#D4AF37" }}
                             >
                               {getTicketInitials()}
                             </div>
                           ) : (
-                            <img 
-                              src={generatedTicket.logo} 
-                              alt={generatedTicket.airline} 
+                            <img
+                              src={generatedTicket.logo}
+                              alt={generatedTicket.airline}
                               onError={() => setLogoError(true)}
-                              className="w-10 h-10 rounded-xl object-contain bg-white/10 p-1.5 border border-white/10 shrink-0" 
+                              className="w-10 h-10 rounded-xl object-contain bg-white/10 p-1.5 border border-white/10 shrink-0"
                             />
                           )}
                           <div>
@@ -759,9 +760,9 @@ function CheckoutContent() {
                             const isBlack = (i * 7 + 13) % 3 !== 0;
                             const width = (i % 5 === 0) ? "w-[3px]" : (i % 3 === 0) ? "w-[2px]" : "w-[1px]";
                             return (
-                              <div 
-                                key={i} 
-                                className={`${isBlack ? "bg-black" : "bg-transparent"} ${width} shrink-0`} 
+                              <div
+                                key={i}
+                                className={`${isBlack ? "bg-black" : "bg-transparent"} ${width} shrink-0`}
                               />
                             );
                           })}
@@ -772,7 +773,7 @@ function CheckoutContent() {
                   </div>
 
                   {/* PDF Download Button */}
-                  <button 
+                  <button
                     onClick={handleDownloadPDF}
                     className="w-full py-4 bg-gold hover:bg-gold-light text-onyx font-bold rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(212,175,55,0.25)] flex items-center justify-center gap-2 text-sm mt-2"
                   >
@@ -795,7 +796,7 @@ function CheckoutContent() {
               )}
 
               {/* Loyalty Update */}
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
                 className="mt-4 p-4 rounded-xl bg-gold/10 border border-gold/30 flex items-center justify-between"
               >

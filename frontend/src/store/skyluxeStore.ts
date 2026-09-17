@@ -19,7 +19,7 @@ export interface FlightBooking {
   seatNumber?: string;
   passengers: number;
   cost: number;
-  status: "Confirmed" | "Completed" | "Pending";
+  status: "Confirmed" | "Completed" | "Pending" | "Cancelled";
   date: string;
   catering?: string;
   chauffeur?: string;
@@ -151,7 +151,7 @@ interface SkyLuxeState {
   chargeWallet: (amount: number, description: string) => Promise<boolean>;
   addCoins: (amount: number) => Promise<void>;
   redeemCoupon: (brand: string) => Promise<boolean>;
-  bookFlight: (booking: Omit<FlightBooking, "id" | "status" | "boardingTime" | "gate" | "terminal font-sans">) => Promise<FlightBooking>;
+  bookFlight: (booking: Omit<FlightBooking, "id" | "status" | "boardingTime" | "gate" | "terminal">) => Promise<FlightBooking>;
   addConciergeRequest: (request: Omit<ConciergeRequest, "id" | "status">) => Promise<void>;
   addSavedTrip: (trip: Omit<SavedTrip, "id" | "createdAt">) => Promise<void>;
   addChatMessage: (msg: Omit<ChatMessage, "id">) => void;

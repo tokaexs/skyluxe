@@ -8,7 +8,12 @@ const conciergeRequestSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['Catering', 'Chauffeur', 'Security', 'Helicopter', 'Private Chef', 'Private Security', 'Hotel Booking', 'Business Meeting', 'Airport Assistance', 'VIP Lounge', 'Travel Insurance'],
+    enum: [
+      'Catering', 'Chauffeur', 'Security', 'Helicopter', 'Private Chef', 'Private Security', 
+      'Hotel Booking', 'Business Meeting', 'Airport Assistance', 'VIP Lounge', 'Travel Insurance',
+      'travel_planning', 'hotel_accommodation', 'dining_entertainment', 'ground_transport', 
+      'airport_assistance', 'private_chef', 'private_security', 'helicopter_transfer'
+    ],
     required: true
   },
   details: {
@@ -17,7 +22,7 @@ const conciergeRequestSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Pending', 'Assigned', 'In Progress', 'In Transit', 'Completed'],
+    enum: ['Pending', 'Assigned', 'In Progress', 'In Transit', 'Completed', 'Cancelled', 'cancelled', 'pending'],
     default: 'Pending'
   },
   flightId: {

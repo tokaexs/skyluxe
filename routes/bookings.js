@@ -65,8 +65,12 @@ router.post('/', async (req, res) => {
     }
 
     let flight = null;
-    if (flight_id && mongoose.Types.ObjectId.isValid(flight_id) && flight_id !== '00000000-0000-0000-0000-000000000000') {
-      flight = await Flight.findById(flight_id);
+    if (flight_id) {
+      if (mongoose.Types.ObjectId.isValid(flight_id) && flight_id !== '00000000-0000-0000-0000-000000000000') {
+        flight = await Flight.findById(flight_id);
+      } else {
+        flight = await Flight.findOne({ flightNumber: flight_id });
+      }
     }
     
     // If no flight found, grab the first scheduled flight as fallback
@@ -112,13 +116,26 @@ router.post('/', async (req, res) => {
       nationality: 'United States'
     }];
 
+    // Dynamically calculate class from request body or seat number fallback
+    let cabinClass = req.body.class;
+    if (!cabinClass && seat_number) {
+      const rowMatch = seat_number.match(/^(\d+)/);
+      if (rowMatch) {
+        const row = parseInt(rowMatch[1]);
+        if (row <= 3) cabinClass = 'first';
+        else if (row <= 7) cabinClass = 'business';
+        else cabinClass = 'economy';
+      }
+    }
+    if (!cabinClass) cabinClass = 'economy';
+
     // Create Booking
     const booking = new Booking({
       user: user._id,
       type: 'commercial',
       flight: flight._id,
       passengers: passengerList,
-      class: 'business',
+      class: cabinClass,
       seats: [seat_number || '2B'],
       totalPrice: cost,
       status: 'Confirmed',
@@ -135,9 +152,12 @@ router.post('/', async (req, res) => {
     await booking.save();
     await user.save();
 
+    const { trackEvent } = require('../lib/analytics');
+    await trackEvent(req, 'book_flight', { flightId: flight._id, totalPrice: cost, class: cabinClass });
+
     // Decrement seat from flight if possible
-    if (flight.availableSeats && flight.availableSeats.business > 0) {
-      flight.availableSeats.business -= 1;
+    if (flight.availableSeats && flight.availableSeats[cabinClass] > 0) {
+      flight.availableSeats[cabinClass] -= 1;
       await flight.save();
     }
 
@@ -241,6 +261,9 @@ router.post('/charter', async (req, res) => {
 
     await booking.save();
     await user.save();
+
+    const { trackEvent } = require('../lib/analytics');
+    await trackEvent(req, 'charter_request', { jetId: jet._id, departure: defaultLegs[0].from, arrival: defaultLegs[0].to });
 
     res.status(201).json(booking);
   } catch (error) {
@@ -596,6 +619,11 @@ router.post('/:id/cancel', async (req, res) => {
     
     await booking.save();
     await user.save();
+    
+    const { trackEvent } = require('../lib/analytics');
+    if (booking.type === 'private') {
+      await trackEvent(req, 'cancel_charter', { requestId: booking._id, fromBooking: true });
+    }
     
     // Create notification
     const Notification = require('../models/Notification');

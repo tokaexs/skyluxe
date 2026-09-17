@@ -1,33 +1,13 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { clerkMiddleware } from '@clerk/nextjs/server';
 
-export function middleware(request: NextRequest) {
-  // Check for the auth token in cookies
-  const token = request.cookies.get('skyluxe_auth_token')?.value;
-
-  // Define protected routes
-  const protectedRoutes = ['/dashboard', '/checkout', '/concierge'];
-  
-  // Define auth routes (should not be accessed if already logged in)
-  const authRoutes = ['/auth/login', '/auth/register'];
-
-  const isProtectedRoute = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route));
-  const isAuthRoute = authRoutes.some(route => request.nextUrl.pathname.startsWith(route));
-
-  if (isProtectedRoute && !token) {
-    const loginUrl = new URL('/auth/login', request.url);
-    // Optionally preserve the intended destination
-    loginUrl.searchParams.set('redirect', request.nextUrl.pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  if (isAuthRoute && token) {
-    return NextResponse.redirect(new URL('/', request.url));
-  }
-
-  return NextResponse.next();
-}
+export default clerkMiddleware();
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/checkout/:path*', '/auth/:path*', '/concierge/:path*'],
+  matcher: [
+    // Skip Next.js internals and all static files, unless found in search params
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    // Always run for API routes
+    '/(api|trpc)(.*)',
+    '/__clerk/:path*',
+  ],
 };

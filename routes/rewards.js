@@ -90,6 +90,10 @@ router.post('/redeem', async (req, res) => {
 
     await user.save();
 
+    req.user = user;
+    const { trackEvent } = require('../lib/analytics');
+    await trackEvent(req, 'loyalty_redeem', { couponId: coupon_id, pointsRequired: coupon.pointsRequired });
+
     res.json({
       message: 'Coupon redeemed successfully',
       coins_balance: user.coins,

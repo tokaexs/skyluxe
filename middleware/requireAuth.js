@@ -9,7 +9,8 @@ const requireAuth = async (req, res, next) => {
     if (token) {
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-        const user = await User.findById(decoded.userId).select('-password');
+        const targetId = decoded.userId || decoded.id || decoded._id || decoded.sub;
+        const user = targetId ? await User.findById(targetId).select('-password') : null;
         if (user) {
           req.user = user;
           return next();
@@ -28,10 +29,10 @@ const requireAuth = async (req, res, next) => {
       return next();
     }
 
-    return res.status(401).json({ message: 'Authorization denied. Please log in.' });
+    return res.status(401).json({ message: 'Authorization denied. Please log in.', error: 'Authorization denied. Please log in.' });
   } catch (error) {
     console.error('Auth middleware error:', error);
-    res.status(401).json({ message: 'Token is not valid or authorization denied' });
+    res.status(401).json({ message: 'Token is not valid or authorization denied', error: 'Token is not valid or authorization denied' });
   }
 };
 

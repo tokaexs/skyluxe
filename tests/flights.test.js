@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const app = require('../src/app');
 const Flight = require('../src/models/Flight');
 const User = require('../src/models/User');
+const Airline = require('../src/models/Airline');
+
 
 describe('Flight Routes', () => {
   let testUser;
@@ -12,6 +14,11 @@ describe('Flight Routes', () => {
   beforeAll(async () => {
     // Connect to test database
     await mongoose.connect(process.env.MONGODB_URI);
+
+    // Clear collections first
+    await User.deleteMany({});
+    await Flight.deleteMany({});
+    await Airline.deleteMany({});
     
     // Create test user
     testUser = await User.create({
@@ -22,9 +29,19 @@ describe('Flight Routes', () => {
       phoneNumber: '1234567890'
     });
 
+    // Create test airline
+    const testAirline = await Airline.create({
+      airlineCode: 'AI',
+      airlineName: 'Air India',
+      iataCode: 'AI',
+      icaoCode: 'AIC',
+      country: 'India'
+    });
+
     // Create test flight
     testFlight = await Flight.create({
       flightNumber: 'SL101',
+      airline: testAirline._id,
       departure: {
         city: 'Mumbai',
         airport: 'BOM',
@@ -35,11 +52,17 @@ describe('Flight Routes', () => {
         airport: 'DEL',
         time: new Date('2024-04-01T12:00:00Z')
       },
+      duration: 120,
       aircraft: 'Boeing 787',
       price: {
         economy: 5000,
         business: 15000,
         first: 25000
+      },
+      availableSeats: {
+        economy: 200,
+        business: 40,
+        first: 10
       },
       seats: {
         total: 300,
@@ -61,6 +84,7 @@ describe('Flight Routes', () => {
     // Clean up test data
     await User.deleteMany({});
     await Flight.deleteMany({});
+    await Airline.deleteMany({});
     await mongoose.connection.close();
   });
 

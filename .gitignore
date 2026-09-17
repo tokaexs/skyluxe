@@ -65,3 +65,10 @@ __pycache__/
 *.pyc
 *.db
 .pytest_cache/
+.vercel
+
+# Next.js
+.next/
+
+# Generated invoices
+invoices/*.pdf

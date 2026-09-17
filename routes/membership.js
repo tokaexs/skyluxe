@@ -1,6 +1,28 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
+const requireAuth = require('../middleware/requireAuth');
+const { generateMembershipCardPDF } = require('../lib/membershipCardGenerator');
+const path = require('path');
+
+// Download Membership Card PDF
+router.get('/card/download', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.userId || req.user.id || req.user._id;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const pdfPath = await generateMembershipCardPDF(user);
+    const absolutePath = path.join(__dirname, '..', pdfPath);
+    
+    res.download(absolutePath, `sovereign-card-${user._id}.pdf`);
+  } catch (error) {
+    console.error('Membership card PDF generation error:', error);
+    res.status(500).json({ message: 'Server error generating membership card PDF' });
+  }
+});
 
 const PLANS = [
   {
@@ -122,6 +144,10 @@ router.post('/subscribe', async (req, res) => {
 
     await user.save();
 
+    req.user = user;
+    const { trackEvent } = require('../lib/analytics');
+    await trackEvent(req, 'membership_purchase', { planId: plan_id, price: cost });
+
     res.json({
       message: `Subscribed to ${plan.name} successfully`,
       membership: user.membership,
@@ -136,39 +162,78 @@ router.post('/subscribe', async (req, res) => {
 
 // Legacy support routes
 router.get('/tiers', (req, res) => {
-  const tiers = {};
-  PLANS.forEach(p => {
-    tiers[p.id] = p;
-  });
-  res.json(tiers);
+  res.json(PLANS);
 });
 
-router.post('/purchase', async (req, res) => {
+router.post('/purchase', requireAuth, async (req, res) => {
   try {
-    const userId = req.user?.userId || req.query.user_id;
+    const userId = req.user.userId || req.user.id || req.user._id;
     const { tier } = req.body;
     
     if (!userId) {
-      return res.status(400).json({ message: 'Authentication required' });
+      return res.status(400).json({ error: 'Authentication required' });
     }
 
     const plan = PLANS.find(p => p.id === tier);
-    if (!plan) return res.status(400).json({ message: 'Invalid tier' });
+    if (!plan) return res.status(400).json({ error: 'Invalid tier' });
 
     const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) return res.status(404).json({ error: 'User not found' });
 
     user.membership = plan.id;
     user.membershipExpiry = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
     await user.save();
 
-    res.json({
+    const { trackEvent } = require('../lib/analytics');
+    await trackEvent(req, 'membership_purchase', { planId: tier, price: plan.price });
+
+    res.status(201).json({
       message: 'Membership purchased successfully',
       membership: user.membership,
-      expiry: user.membershipExpiry
+      expiry: user.membershipExpiry,
+      membershipId: user._id,
+      status: 'active',
+      tier: user.membership
     });
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.get('/details', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.userId || req.user.id || req.user._id;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    res.json({
+      tier: user.membership || 'none',
+      status: user.membership && user.membership !== 'none' ? 'active' : 'inactive',
+      expiryDate: user.membershipExpiry || null
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.post('/renew', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.userId || req.user.id || req.user._id;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    
+    user.membershipExpiry = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+    await user.save();
+    
+    const { trackEvent } = require('../lib/analytics');
+    await trackEvent(req, 'membership_renew', { tier: user.membership });
+    
+    res.json({
+      status: 'active',
+      renewalDate: user.membershipExpiry
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

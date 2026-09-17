@@ -39,8 +39,10 @@ router.post('/register',
       });
 
       await user.save();
-
-      // Generate JWT token
+      
+      req.user = user;
+      const { trackEvent } = require('../lib/analytics');
+      await trackEvent(req, 'register', { email });
       const token = jwt.sign(
         { userId: user._id },
         process.env.JWT_SECRET || 'your-secret-key',
@@ -98,6 +100,10 @@ router.post('/login',
         return res.status(400).json({ message: 'Invalid credentials' });
       }
 
+      req.user = user;
+      const { trackEvent } = require('../lib/analytics');
+      await trackEvent(req, 'login', { email });
+
       // Generate JWT token
       const token = jwt.sign(
         { userId: user._id },
@@ -130,6 +136,8 @@ router.get('/profile', async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
+    const { trackEvent } = require('../lib/analytics');
+    await trackEvent(req, 'view_profile');
     res.json(user);
   } catch (error) {
     console.error('Profile error:', error);
@@ -154,6 +162,10 @@ router.put('/profile',
       if (phone) user.phone = phone;
 
       await user.save();
+
+      const { trackEvent } = require('../lib/analytics');
+      await trackEvent(req, 'update_profile');
+
       res.json(user);
     } catch (error) {
       console.error('Profile update error:', error);
@@ -417,8 +429,10 @@ router.get('/me', requireAuth, (req, res) => {
 });
 
 // Logout user
-router.post('/logout', (req, res, next) => {
+router.post('/logout', async (req, res, next) => {
   console.log('Backend log: Logout request initiated');
+  const { trackEvent } = require('../lib/analytics');
+  await trackEvent(req, 'logout');
   req.logout((err) => {
     if (err) {
       console.error('Backend log: Error logging out via passport:', err);

@@ -33,7 +33,7 @@ npm install
 
 3. Create a `.env` file in the root directory:
 ```bash
-PORT=3001
+PORT=5000
 NODE_ENV=development
 ```
 
@@ -45,12 +45,12 @@ To run the application in development mode:
 npm run dev
 ```
 
-The application will be available at `http://localhost:3001`
+The application will be available at `http://localhost:5000`
 
 ## Production Deployment
 
 1. Set environment variables:
-   - `PORT`: The port number (default: 3001)
+   - `PORT`: The port number (default: 5000)
    - `NODE_ENV`: Set to 'production'
 
 2. Build and start:

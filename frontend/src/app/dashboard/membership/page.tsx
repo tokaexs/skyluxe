@@ -5,20 +5,39 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Star, ShieldCheck, Zap, ArrowRight, QrCode, Sparkles, 
   Map, Award, Calendar, Check, Compass, MessageSquare, 
-  Lock, AlertTriangle, Coins, RefreshCw
+  Lock, AlertTriangle, Coins, RefreshCw, Loader2
 } from "lucide-react";
 import Link from "next/link";
 import { useSkyLuxeStore } from "@/store/skyluxeStore";
 import { api } from "@/lib/api";
 
 export default function MembershipManagement() {
-  const { profile, formatAmount, fetchInitialData, walletBalance } = useSkyLuxeStore();
+  const { profile, formatAmount, fetchInitialData, walletBalance, coins } = useSkyLuxeStore();
   const [rotate, setRotate] = useState({ x: 0, y: 0 });
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [downloadingCard, setDownloadingCard] = useState(false);
   
   // Welcome reveal states
   const [showWelcome, setShowWelcome] = useState(false);
   const [welcomeTier, setWelcomeTier] = useState({ id: "", name: "" });
+
+  const handleDownloadCard = async () => {
+    setDownloadingCard(true);
+    try {
+      const blob = await api.download("/membership/card/download");
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const lastName = profile?.name ? profile.name.split(" ").slice(-1)[0] : "member";
+      a.download = `skyluxe-membercard-${lastName.toLowerCase()}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(err.message || "Failed to download membership card.");
+    } finally {
+      setDownloadingCard(false);
+    }
+  };
 
   const activeTier = (profile?.membership || "none").toLowerCase().replace(" ", "_");
 
@@ -247,7 +266,7 @@ export default function MembershipManagement() {
                           activeTier === "silver" ? "text-slate-800" : "text-gold"
                         }`}>
                           <Coins className="w-3.5 h-3.5" />
-                          {(profile.coins || 0).toLocaleString()}
+                          {(coins || 0).toLocaleString()}
                         </p>
                       </div>
                     </div>
@@ -267,6 +286,24 @@ export default function MembershipManagement() {
               </div>
             </motion.div>
           </div>
+
+          {activeTier !== "none" && (
+            <button
+              onClick={handleDownloadCard}
+              disabled={downloadingCard}
+              className="w-full py-3.5 rounded-2xl bg-gold/10 hover:bg-gold hover:text-onyx text-gold border border-gold/20 hover:border-gold font-bold transition-all duration-300 text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              {downloadingCard ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating Card PDF...
+                </>
+              ) : (
+                <>
+                  <Award className="w-4 h-4" /> Download Membership Card PDF
+                </>
+              )}
+            </button>
+          )}
 
           {/* Wallet Balance Check */}
           <div className="glass-panel p-6 rounded-2xl border border-white/10 bg-onyx/40 flex justify-between items-center">

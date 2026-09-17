@@ -54,6 +54,9 @@ router.post('/:id/read', async (req, res) => {
     notification.unread = false;
     await notification.save();
 
+    const { trackEvent } = require('../lib/analytics');
+    await trackEvent(req, 'read_notification', { notificationId: req.params.id });
+
     res.json({ message: 'Notification marked as read', notification });
   } catch (error) {
     console.error('Mark notification read error:', error);

@@ -48,6 +48,7 @@ from src.services.rewards.router import router as rewards_router
 from src.services.destinations.router import router as destinations_router
 from src.services.notifications.router import router as notifications_router
 from src.services.dashboard.router import router as dashboard_router
+from src.services.aris.router import router as aris_router
 
 from src.common.database import Base, engine, AsyncSessionLocal
 from src.common.seed import seed_database
@@ -75,6 +76,7 @@ app.include_router(rewards_router, prefix="/api/v1/rewards", tags=["Rewards & Lo
 app.include_router(destinations_router, prefix="/api/v1/destinations", tags=["Destinations"])
 app.include_router(notifications_router, prefix="/api/v1/notifications", tags=["Notifications"])
 app.include_router(dashboard_router, prefix="/api/v1/dashboard", tags=["Dashboard"])
+app.include_router(aris_router, prefix="/api/v1/aris", tags=["Airlines Reintelligence"])
 
 
 

@@ -188,7 +188,8 @@ function SearchResultsContent() {
           to: toCode === "DXB" ? "Dubai Al Maktoum" : toCode === "Dubai" ? "Dubai Al Maktoum" : toCode,
           date: dateStr,
           passengers,
-          class: ['economy', 'business', 'first'].includes(cabinClass) ? cabinClass : 'business'
+          class: ['economy', 'business', 'first'].includes(cabinClass) ? cabinClass : 'business',
+          type: tripType
         });
 
         if (results && results.length > 0) {

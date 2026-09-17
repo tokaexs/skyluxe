@@ -4,14 +4,13 @@ import { useState } from "react";
 import { motion, useScroll, useMotionValueEvent } from "framer-motion";
 import Link from "next/link";
 import { Plane } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
+import { SignInButton, SignUpButton, Show, UserButton } from "@clerk/nextjs";
 import { useSkyLuxeStore } from "@/store/skyluxeStore";
 
 export default function GlassNavbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const { scrollY } = useScroll();
-  const { isAuthenticated, logout, isLoading } = useAuth();
-  const { currency, setCurrency, profile } = useSkyLuxeStore();
+  const { currency, setCurrency } = useSkyLuxeStore();
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     setIsScrolled(latest > 50);
@@ -27,20 +26,20 @@ export default function GlassNavbar() {
       }`}
     >
       <div className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-3 group">
+        <Link id="tour-logo" href="/" className="flex items-center gap-3 group">
           <Plane className="w-8 h-8 text-gold -rotate-45 group-hover:rotate-0 transition-transform duration-500 ease-out" />
           <span className="text-2xl font-serif font-bold text-white tracking-tight">SkyLuxe</span>
         </Link>
 
-        <div className="hidden md:flex items-center gap-8">
-          <NavLink href={isAuthenticated ? "/?landing=true" : "/"}>Home</NavLink>
+        <div id="tour-nav" className="hidden md:flex items-center gap-8">
+          <NavLink href="/">Home</NavLink>
           <NavLink href="/fleet">Private Jets</NavLink>
           <NavLink href="/commercial">Commercial Flights</NavLink>
           <NavLink href="/concierge">Concierge AI</NavLink>
           <NavLink href="/membership">Elite Membership</NavLink>
 
           {/* Currency Toggle */}
-          <div className="flex bg-white/5 border border-white/10 p-0.5 rounded-xl text-[10px] ml-4">
+          <div id="tour-currency" className="flex bg-white/5 border border-white/10 p-0.5 rounded-xl text-[10px] ml-4">
             <button 
               onClick={() => setCurrency("USD")}
               className={`px-2.5 py-1 rounded-lg transition-all ${currency === "USD" ? "bg-gold text-onyx font-bold" : "text-platinum/60 hover:text-white"}`}
@@ -55,48 +54,38 @@ export default function GlassNavbar() {
             </button>
           </div>
 
-          {/* Auth State Simulation - Links to Dashboard */}
-          {!isLoading && isAuthenticated ? (
+          {/* Clerk Auth Controls */}
+          <Show when="signed-out">
+            <div className="flex items-center gap-3">
+              <SignInButton mode="modal">
+                <button id="tour-signin" className="px-5 py-2 text-sm text-platinum/80 hover:text-white font-medium transition-colors">
+                  Sign In
+                </button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <button id="tour-signup" className="px-5 py-2 rounded-full bg-gradient-to-r from-gold to-gold-light text-onyx font-semibold text-sm shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:shadow-[0_0_30px_rgba(212,175,55,0.6)] hover:-translate-y-0.5 transition-all duration-300">
+                  Sign Up
+                </button>
+              </SignUpButton>
+            </div>
+          </Show>
+
+          <Show when="signed-in">
             <div className="flex items-center gap-4">
-              {(() => {
-                if (!profile || !profile.membership || profile.membership === "none") return null;
-                const tier = profile.membership.toLowerCase().replace(" ", "_");
-                if (tier === "black_elite") {
-                  return (
-                    <span className="px-3 py-1.5 rounded-full text-[10px] font-semibold tracking-wider uppercase border border-black/85 bg-gradient-to-r from-neutral-900 to-black text-gold shadow-[0_0_15px_rgba(212,175,55,0.45)]">
-                      ✦ Black Elite
-                    </span>
-                  );
-                }
-                if (tier === "executive") {
-                  return (
-                    <span className="px-3 py-1.5 rounded-full text-[10px] font-semibold tracking-wider uppercase border border-gold/40 bg-gradient-to-r from-gold/10 to-gold/20 text-gold shadow-[0_0_10px_rgba(212,175,55,0.2)]">
-                      ✦ Executive
-                    </span>
-                  );
-                }
-                if (tier === "silver") {
-                  return (
-                    <span className="px-3 py-1.5 rounded-full text-[10px] font-semibold tracking-wider uppercase border border-white/20 bg-gradient-to-r from-white/5 to-white/10 text-platinum">
-                      ✦ Silver Club
-                    </span>
-                  );
-                }
-                return null;
-              })()}
-              <Link href={profile && profile.membership && profile.membership !== "none" ? "/" : "/dashboard"}>
-                <button className="px-6 py-2.5 rounded-full bg-gradient-to-r from-gold to-gold-light text-onyx font-semibold shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:shadow-[0_0_30px_rgba(212,175,55,0.6)] hover:-translate-y-0.5 transition-all duration-300">
-                  Access Dashboard
+              <Link href="/dashboard">
+                <button id="tour-dashboard" className="px-5 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-white font-medium text-sm transition-all">
+                  Dashboard
                 </button>
               </Link>
+              <UserButton 
+                appearance={{
+                  elements: {
+                    userButtonAvatarBox: "w-9 h-9 border border-gold/40 shadow-[0_0_10px_rgba(212,175,55,0.3)]",
+                  }
+                }}
+              />
             </div>
-          ) : !isLoading && (
-            <Link href="/auth/login">
-              <button className="px-6 py-2.5 rounded-full bg-gradient-to-r from-gold to-gold-light text-onyx font-semibold shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:shadow-[0_0_30px_rgba(212,175,55,0.6)] hover:-translate-y-0.5 transition-all duration-300">
-                Sign In
-              </button>
-            </Link>
-          )}
+          </Show>
         </div>
       </div>
     </motion.nav>

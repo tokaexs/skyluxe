@@ -4,6 +4,7 @@ const Flight = require('../models/Flight');
 const Fleet = require('../models/Fleet');
 const Coupon = require('../models/Coupon');
 const Airline = require('../models/Airline');
+const ARIS = require('../models/ARIS');
 
 async function seedDatabase() {
   try {
@@ -344,6 +345,131 @@ async function seedDatabase() {
       console.log('Seeder: Seeded rewards vouchers successfully.');
     } else {
       console.log('Seeder: Rewards vouchers already seeded.');
+    }
+
+    // 6. Seed ARIS (Airline Reintelligence System) Collections
+    const arisCount = await ARIS.DemandForecast.countDocuments();
+    if (arisCount === 0) {
+      console.log('Seeder: No ARIS intelligence metrics found. Initializing AI reintelligence data...');
+
+      // 6.1 Demand Forecasts
+      const demandData = [
+        { route: 'BOM-DWC', date: new Date(), demandIndex: 94, confidenceLevel: 92, forecast7d: 95, forecast30d: 91, forecast90d: 88, forecast365d: 85, seasonalFactors: ['Weekend business rush', 'Dubai Summer Shopping Festival'] },
+        { route: 'CDG-AUS', date: new Date(), demandIndex: 87, confidenceLevel: 89, forecast7d: 82, forecast30d: 85, forecast90d: 92, forecast365d: 89, seasonalFactors: ['SXSW Festival', 'Summer tourism surge'] },
+        { route: 'SIN-BOM', date: new Date(), demandIndex: 76, confidenceLevel: 91, forecast7d: 78, forecast30d: 75, forecast90d: 80, forecast365d: 82, seasonalFactors: ['Monsoon business travel'] },
+        { route: 'DEL-GOA', date: new Date(), demandIndex: 88, confidenceLevel: 90, forecast7d: 92, forecast30d: 86, forecast90d: 79, forecast365d: 91, seasonalFactors: ['Festivals holiday rush', 'Weekend getaway peak'] }
+      ];
+      await ARIS.DemandForecast.insertMany(demandData);
+
+      // 6.2 Route Recommendations
+      const routeData = [
+        { origin: 'Lucknow', destination: 'Dubai', confidence: 88, expectedLoadFactor: 81, expectedRevenue: 14000000, reason: 'High direct search traffic and high-yield business travel.', status: 'high_growth' },
+        { origin: 'Bengaluru', destination: 'London', confidence: 82, expectedLoadFactor: 78, expectedRevenue: 22000000, reason: 'Underserved business connectivity for tech corporations.', status: 'emerging' },
+        { origin: 'Mumbai', destination: 'New York', confidence: 91, expectedLoadFactor: 84, expectedRevenue: 45000000, reason: 'High-value direct segment currently utilizing secondary hubs.', status: 'high_growth' },
+        { origin: 'Delhi', destination: 'Singapore', confidence: 72, expectedLoadFactor: 65, expectedRevenue: 12000000, reason: 'High competitor capacity density reducing load margins.', status: 'declining' }
+      ];
+      await ARIS.RouteRecommendation.insertMany(routeData);
+
+      // 6.3 Customer Segments
+      const segmentData = [
+        { segment: 'Luxury Traveler', upgradeProbability: 85, membershipConversion: 78, lifetimeValue: 450000, churnRisk: 8, travelIntent: 'Leisure / Yacht Charters', recommendedActions: ['Offer bespoke VIP lounge upgrades', 'Personalized private jet charters'] },
+        { segment: 'Business Traveler', upgradeProbability: 65, membershipConversion: 91, lifetimeValue: 280000, churnRisk: 12, travelIntent: 'Frequent Corporate', recommendedActions: ['Fast-track security clearances', 'Corporate wallet credit programs'] },
+        { segment: 'Frequent Flyer', upgradeProbability: 40, membershipConversion: 55, lifetimeValue: 150000, churnRisk: 18, travelIntent: 'Mix Business & Leisure', recommendedActions: ['Targeted membership renewal rewards', 'SkyCoins bonus point campaigns'] }
+      ];
+      await ARIS.CustomerSegment.insertMany(segmentData);
+
+      // 6.4 Pricing Insights
+      const pricingData = [
+        { flightNumber: 'EK-500', currentPrice: 450, recommendedPrice: 480, revenueGain: 7, elasticity: 'low', sensitivity: 22, priceHistory: [{ date: new Date(Date.now() - 3 * 24 * 3600 * 1000), price: 420 }, { date: new Date(Date.now() - 24 * 3600 * 1000), price: 450 }] },
+        { flightNumber: 'AI-100', currentPrice: 350, recommendedPrice: 370, revenueGain: 6, elasticity: 'low', sensitivity: 31, priceHistory: [{ date: new Date(Date.now() - 3 * 24 * 3600 * 1000), price: 340 }, { date: new Date(Date.now() - 24 * 3600 * 1000), price: 350 }] }
+      ];
+      await ARIS.PricingInsight.insertMany(pricingData);
+
+      // 6.5 Fleet Analytics
+      const fleetData = [
+        { aircraftModel: 'Gulfstream G700', currentHub: 'Mumbai (BOM)', recommendedHub: 'Dubai (DWC)', usageHours: 1200, idleHours: 350, maintenanceCycle: 88, utilizationRate: 77, expectedImprovement: 12 },
+        { aircraftModel: 'Bombardier Global 7500', currentHub: 'Dubai (DWC)', recommendedHub: 'Singapore (SIN)', usageHours: 1400, idleHours: 250, maintenanceCycle: 92, utilizationRate: 85, expectedImprovement: 8 },
+        { aircraftModel: 'Boeing Business Jet', currentHub: 'Delhi (DEL)', recommendedHub: 'London (LHR)', usageHours: 850, idleHours: 600, maintenanceCycle: 78, utilizationRate: 58, expectedImprovement: 15 }
+      ];
+      await ARIS.FleetAnalytic.insertMany(fleetData);
+
+      // 6.6 Revenue Forecasts
+      const revenueData = [
+        { month: '2026-06', projectedRevenue: 5200000, expectedGrowth: 12, commercialRevenue: 1500000, charterRevenue: 2500000, membershipRevenue: 1200000 },
+        { month: '2026-07', projectedRevenue: 5800000, expectedGrowth: 11, commercialRevenue: 1750000, charterRevenue: 2800000, membershipRevenue: 1250000 },
+        { month: '2026-08', projectedRevenue: 6400000, expectedGrowth: 10, commercialRevenue: 2000000, charterRevenue: 3100000, membershipRevenue: 1300000 }
+      ];
+      await ARIS.RevenueForecast.insertMany(revenueData);
+
+      // 6.7 Operational Alerts
+      const operationalData = [
+        { airport: 'BOM (Mumbai)', delayMinutes: 12, congestionLevel: 'medium', recommendations: 'Initiate FBO ground handling ramp buffer.', impact: 8 },
+        { airport: 'DWC (Dubai)', delayMinutes: 24, congestionLevel: 'high', recommendations: 'Increase turnaround buffer at DWC FBO hangar.', impact: 11 },
+        { airport: 'LHR (London)', delayMinutes: 35, congestionLevel: 'high', recommendations: 'Pre-file landing slots via alternative VIP terminal.', impact: 14 }
+      ];
+      await ARIS.OperationalAlert.insertMany(operationalData);
+
+      // 6.8 Loyalty Insights
+      if (demoUser) {
+        await new ARIS.LoyaltyInsight({
+          user: demoUser._id,
+          redemptionLikelihood: 82,
+          campaignOffered: 'Lounge Vouchers Bonus Program',
+          couponRecommended: 'VIP Helicopter Transfer (DWC)',
+          membershipUpgradeLikelihood: 15
+        }).save();
+
+        // 6.9 Travel Passport Analytics
+        await new ARIS.TravelPassportAnalytic({
+          user: demoUser._id,
+          profileType: 'High Value Voyager',
+          countriesVisitedCount: 8,
+          totalJetHours: 42,
+          milestonesUnlockedCount: 6
+        }).save();
+
+        // 6.10 AI Recommendations
+        await new ARIS.AIRecommendation({
+          user: demoUser._id,
+          destination: 'Dubai (DWC)',
+          hotels: [
+            { name: 'Armani Hotel Dubai', rating: 4.8, price: 850 },
+            { name: 'Burj Al Arab Jumeirah', rating: 4.9, price: 1650 }
+          ],
+          transfers: [
+            { type: 'Rolls Royce Phantom VIP Transfer', price: 450 },
+            { type: 'H145 Helicopter Shuttle DWC-DXB', price: 1200 }
+          ],
+          dining: [
+            { name: 'Al Mahara (Undersea Dining)', cuisine: 'Seafood Fine Dining' },
+            { name: 'Tresind Studio (2 Michelin Stars)', cuisine: 'Modern Indian Gastronomy' }
+          ],
+          experiences: [
+            { title: 'Private Helicopter Tour of Palm Jumeirah', price: 900 },
+            { title: 'Sunset Yacht Charter from Dubai Marina', price: 2500 }
+          ]
+        }).save();
+      }
+
+      // 6.11 Model Metrics
+      const metricsData = [
+        { modelName: 'DemandForecaster', accuracy: 94.2, loss: 0.045, version: 'v2.1.0' },
+        { modelName: 'PricingOptimizer', accuracy: 91.5, loss: 0.071, version: 'v1.4.2' },
+        { modelName: 'RoutePlanner', accuracy: 88.7, loss: 0.112, version: 'v3.0.1' }
+      ];
+      await ARIS.ModelMetric.insertMany(metricsData);
+
+      // 6.12 Executive Insights
+      const insightsData = [
+        { title: 'Highest Revenue Route', category: 'revenue', description: 'Mumbai to Dubai flights led domestic & regional charter revenues.', value: '$1.2M', trend: '+14% vs last month' },
+        { title: 'Underutilized Asset', category: 'fleet', description: 'Boeing Business Jet BBJ idle time exceeded 40% at Delhi Hub.', value: 'BBJ-02', trend: 'Recommend shift to London Hub' },
+        { title: 'Redemption Trend Alert', category: 'loyalty', description: 'Lounge voucher redemptions spiked by 35% in Executive tier.', value: 'Vouchers', trend: '+35% redemption volume' }
+      ];
+      await ARIS.ExecutiveInsight.insertMany(insightsData);
+
+      console.log('Seeder: Seeded ARIS intelligence metrics successfully.');
+    } else {
+      console.log('Seeder: ARIS intelligence metrics already seeded.');
     }
 
     console.log('Seeder: Completed database seeding checks.');

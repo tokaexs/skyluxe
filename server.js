@@ -9,15 +9,17 @@ const passport = require('passport');
 // Initialize Express
 const app = express();
 
-// Connect to MongoDB
+// Connect to MongoDB (skip during test runs to let Jest setup handle it)
 const { seedDatabase } = require('./config/seeder');
 
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/skyluxe')
-  .then(async () => {
-    console.log('Connected to MongoDB successfully');
-    await seedDatabase();
-  })
-  .catch(err => console.error('MongoDB connection error:', err));
+if (process.env.NODE_ENV !== 'test') {
+  mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/skyluxe')
+    .then(async () => {
+      console.log('Connected to MongoDB successfully');
+      await seedDatabase();
+    })
+    .catch(err => console.error('MongoDB connection error:', err));
+}
 
 // Rate Limiter for API Security
 const rateLimit = require('express-rate-limit');
@@ -96,9 +98,13 @@ const paymentsRouter = require('./routes/payments');
 const invoicesRouter = require('./routes/invoices');
 const adminRouter = require('./routes/admin');
 const adminAirlinesRouter = require('./routes/admin-airlines');
+const privateJetsRouter = require('./routes/private-jets');
 
 app.use('/api/payments', paymentsRouter);
 app.use('/api/v1/payments', paymentsRouter);
+
+app.use('/api/private-jets', privateJetsRouter);
+app.use('/api/v1/private-jets', privateJetsRouter);
 
 app.use('/api/invoices', invoicesRouter);
 app.use('/api/v1/invoices', invoicesRouter);
@@ -108,6 +114,19 @@ app.use('/api/v1/admin', adminRouter);
 
 app.use('/api/admin/airlines', adminAirlinesRouter);
 app.use('/api/v1/admin/airlines', adminAirlinesRouter);
+
+const arisRouter = require('./routes/aris');
+app.use('/api/aris', arisRouter);
+app.use('/api/v1/aris', arisRouter);
+
+const dashboardRouter = require('./routes/dashboard');
+app.use('/api/dashboard', dashboardRouter);
+app.use('/api/v1/dashboard', dashboardRouter);
+
+const destinationsRouter = require('./routes/destinations');
+app.use('/api/destinations', destinationsRouter);
+app.use('/api/v1/destinations', destinationsRouter);
+
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -124,8 +143,13 @@ app.use((req, res) => {
 });
 
 // Start Server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+if (require.main === module) {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+      console.log(`Server is running on http://localhost:${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
+}
+
+module.exports = app;
+// Force nodemon restart to load new env vars

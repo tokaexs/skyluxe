@@ -206,7 +206,7 @@ function RunwayEnvironment() {
         sectionSize={2}
         sectionThickness={1.5}
         sectionColor="#D4AF37" 
-        gridSize={[30, 50]} 
+        args={[30, 50]} 
         infiniteGrid 
         fadeDistance={40}
         cellColor="#222222"

@@ -159,6 +159,9 @@ router.post('/verify', async (req, res) => {
         date: new Date()
       });
       await user.save();
+      req.user = user;
+      const { trackEvent } = require('../lib/analytics');
+      await trackEvent(req, 'wallet_topup', { amount: payment.amount });
       detailsString = `FBO Wallet credited with $${payment.amount}`;
       await sendPaymentSuccessEmail(user.email, user.firstName, payment.amount, razorpay_payment_id);
 
@@ -183,6 +186,9 @@ router.post('/verify', async (req, res) => {
       });
 
       await user.save();
+      req.user = user;
+      const { trackEvent } = require('../lib/analytics');
+      await trackEvent(req, 'membership_purchase', { planId: tier, price: payment.amount });
       detailsString = `SkyLuxe ${tier.toUpperCase()} Membership activated`;
       await sendMembershipActivationEmail(user.email, user.firstName, tier, payment.amount);
 
@@ -225,6 +231,9 @@ router.post('/verify', async (req, res) => {
       });
       await booking.save();
       bookingId = booking._id;
+      req.user = user;
+      const { trackEvent } = require('../lib/analytics');
+      await trackEvent(req, 'book_flight', { flightId: flight ? flight._id : null, totalPrice: payment.amount, class: bookingDetails?.class || 'business' });
 
       // Credit SkyCoins points (10% of price)
       const pointsAwarded = Math.max(500, Math.floor(payment.amount * 0.1));
@@ -291,6 +300,9 @@ router.post('/verify', async (req, res) => {
       });
       await booking.save();
       bookingId = booking._id;
+      req.user = user;
+      const { trackEvent } = require('../lib/analytics');
+      await trackEvent(req, 'charter_request', { jetId: jet ? jet._id : null, departure: bookingDetails?.from || 'BOM', arrival: bookingDetails?.to || 'DWC' });
 
       // Credit SkyCoins points (10% of price)
       const pointsAwarded = Math.max(2000, Math.floor(payment.amount * 0.1));

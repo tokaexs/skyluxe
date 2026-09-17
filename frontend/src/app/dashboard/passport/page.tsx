@@ -3,19 +3,41 @@
 import { motion } from "framer-motion";
 import { 
   Globe, Compass, ShieldCheck, MapPin, Award, Plane, Clock,
-  Calendar, CheckCircle, Lock, Star, Landmark
+  Calendar, CheckCircle, Lock, Star, Landmark, Loader2
 } from "lucide-react";
 import { useSkyLuxeStore } from "@/store/skyluxeStore";
 import AtmosphericGlobe from "@/components/3d/AtmosphericGlobe";
+import { useState } from "react";
+import { api } from "@/lib/api";
 
 export default function AviationPassport() {
   const { profile } = useSkyLuxeStore();
+  const [downloading, setDownloading] = useState(false);
+
   const stats = profile?.passportStats || {
     countriesVisited: [],
     favoriteDestinations: [],
     privateJetHours: 0,
     flightsTaken: 0,
     stamps: []
+  };
+
+  const handleDownloadPassport = async () => {
+    setDownloading(true);
+    try {
+      const blob = await api.download("/users/passport/download");
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const lastName = profile?.name ? profile.name.split(" ").slice(-1)[0] : "member";
+      a.download = `sovereign-passport-${lastName.toLowerCase()}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(err.message || "Failed to download passport booklet.");
+    } finally {
+      setDownloading(false);
+    }
   };
 
   const achievementsList = [
@@ -85,11 +107,28 @@ export default function AviationPassport() {
 
   return (
     <div className="space-y-8 flex-1 pb-12">
-      <div>
-        <h1 className="text-3xl font-serif font-bold text-white mb-2">SkyLuxe Aviation Passport</h1>
-        <p className="text-platinum/50 font-light text-sm">
-          Track countries visited, view custom FBO entry stamps, and review unlock status of achievements.
-        </p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-serif font-bold text-white mb-2">SkyLuxe Aviation Passport</h1>
+          <p className="text-platinum/50 font-light text-sm">
+            Track countries visited, view custom FBO entry stamps, and review unlock status of achievements.
+          </p>
+        </div>
+        <button
+          onClick={handleDownloadPassport}
+          disabled={downloading}
+          className="px-5 py-2.5 rounded-xl border border-gold/30 hover:border-gold bg-gold/5 hover:bg-gold hover:text-onyx text-gold font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50 shrink-0"
+        >
+          {downloading ? (
+            <>
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating...
+            </>
+          ) : (
+            <>
+              <Globe className="w-3.5 h-3.5" /> Download Passport Booklet PDF
+            </>
+          )}
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -101,7 +140,7 @@ export default function AviationPassport() {
             <h3 className="text-sm font-mono text-platinum/40 uppercase tracking-widest self-start mb-4">Interactive Flight Radar</h3>
             
             <div className="w-full max-w-[420px] aspect-square flex items-center justify-center">
-              <AtmosphericGlobe />
+              <AtmosphericGlobe stamps={stats.stamps} />
             </div>
 
             {/* Passport Badges grid */}

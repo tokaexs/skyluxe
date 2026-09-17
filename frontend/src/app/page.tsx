@@ -14,6 +14,7 @@ import GlassNavbar from "@/components/ui/GlassNavbar";
 import { useAuth } from "@/context/AuthContext";
 import { useSkyLuxeStore } from "@/store/skyluxeStore";
 
+
 // ─── Testimonials ──────────────────────────────────────────────────────────
 const TESTIMONIALS = [
   {
@@ -61,7 +62,7 @@ function Particle({ x, y, size, duration, delay }: { x: number; y: number; size:
   return (
     <motion.div
       className="absolute rounded-full bg-gold/40 pointer-events-none"
-      style={{ left: `${x}%`, top: `${y}%`, width: size, height: size }}
+      style={{ left: `${x.toFixed(4)}%`, top: `${y.toFixed(4)}%`, width: `${size.toFixed(4)}px`, height: `${size.toFixed(4)}px` }}
       animate={{ y: [-20, -80, -20], opacity: [0, 0.8, 0], scale: [0.5, 1, 0.5] }}
       transition={{ duration, repeat: Infinity, delay, ease: "easeInOut" }}
     />
@@ -135,7 +136,7 @@ function AnimatedRouteLine({ x1, y1, x2, y2, delay }: { x1: number; y1: number; 
 // ─── Main Component ──────────────────────────────────────────────────────
 function HomeContent() {
   const { isAuthenticated, logout, isLoading } = useAuth();
-  const { profile, flights, formatAmount, walletBalance, fetchInitialData } = useSkyLuxeStore();
+  const { profile, flights, formatAmount, walletBalance, fetchInitialData, coins } = useSkyLuxeStore();
   const searchParams = useSearchParams();
   const forceLanding = searchParams.get("landing") === "true";
   
@@ -367,7 +368,7 @@ function HomeContent() {
                           <p className={`font-mono text-[10px] font-bold ${
                             activeTier === "silver" ? "text-slate-800" : "text-gold"
                           }`}>
-                            {(profile.coins || 0).toLocaleString()}
+                            {(coins || 0).toLocaleString()}
                           </p>
                         </div>
                       </div>
@@ -538,19 +539,23 @@ function HomeContent() {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_40%_at_50%_70%,rgba(212,175,55,0.04),transparent)]" />
 
           {/* Stars field */}
-          {Array.from({ length: 80 }).map((_, i) => (
-            <div
-              key={i}
-              className="absolute rounded-full bg-white"
-              style={{
-                left: `${seededRand(i * 5) * 100}%`,
-                top: `${seededRand(i * 5 + 1) * 60}%`,
-                width: seededRand(i * 5 + 2) * 2 + 0.5,
-                height: seededRand(i * 5 + 2) * 2 + 0.5,
-                opacity: seededRand(i * 5 + 3) * 0.6 + 0.1,
-              }}
-            />
-          ))}
+          {Array.from({ length: 80 }).map((_, i) => {
+            const size = (seededRand(i * 5 + 2) * 2 + 0.5).toFixed(4);
+            const opacity = (seededRand(i * 5 + 3) * 0.6 + 0.1).toFixed(4);
+            return (
+              <div
+                key={i}
+                className="absolute rounded-full bg-white"
+                style={{
+                  left: `${(seededRand(i * 5) * 100).toFixed(4)}%`,
+                  top: `${(seededRand(i * 5 + 1) * 60).toFixed(4)}%`,
+                  width: `${size}px`,
+                  height: `${size}px`,
+                  opacity: Number(opacity),
+                }}
+              />
+            );
+          })}
 
           {/* Animated Clouds */}
           <Cloud top={8} duration={55} opacity={0.6} scale={1.4} />

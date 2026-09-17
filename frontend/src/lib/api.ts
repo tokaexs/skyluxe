@@ -36,4 +36,17 @@ export const api = {
   patch: <T>(endpoint: string, body?: any, options?: RequestInit) =>
     request<T>(endpoint, { ...options, method: "PATCH", body: body ? JSON.stringify(body) : undefined }),
   delete: <T>(endpoint: string, options?: RequestInit) => request<T>(endpoint, { ...options, method: "DELETE" }),
+  download: async (endpoint: string) => {
+    const token = getCookie("skyluxe_auth_token");
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
+      method: "GET",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      }
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to download file: ${response.statusText}`);
+    }
+    return response.blob();
+  }
 };

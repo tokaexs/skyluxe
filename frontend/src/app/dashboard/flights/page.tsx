@@ -15,7 +15,7 @@ export default function MyFlights() {
   const upcomingFlights = flights.filter(f => f.status === "Confirmed" || f.status === "Pending" || f.status === "Cancelled");
   const pastFlights = flights.filter(f => f.status === "Completed");
 
-  const openModal = (type: "tracking" | "boardingPass" | "cabin3d" | "history", flight: FlightBooking) => {
+  const openModal = (type: "tracking" | "boardingPass" | "cabin3d" | "history" | "cancellation", flight: FlightBooking) => {
     setSelectedFlight(flight);
     setActiveModal(type);
   };

@@ -3,8 +3,7 @@ const mongoose = require('mongoose');
 const flightSchema = new mongoose.Schema({
   flightNumber: {
     type: String,
-    required: true,
-    unique: true
+    required: true
   },
   airline: {
     type: mongoose.Schema.Types.ObjectId,
@@ -92,6 +91,7 @@ const flightSchema = new mongoose.Schema({
 
 
 flightSchema.index({ 'departure.time': 1, 'departure.airport': 1, 'arrival.airport': 1 });
+flightSchema.index({ flightNumber: 1, 'departure.time': 1 }, { unique: true });
 
 flightSchema.set('toJSON', {
   virtuals: true,
