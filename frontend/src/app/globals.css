@@ -88,3 +88,65 @@ html.lenis, html.lenis body {
 .lenis.lenis-scrolling iframe {
   pointer-events: none;
 }
+
+/* Clerk UserButton Popover Dropdown High-Contrast Overrides */
+.cl-userButtonPopoverRootBox {
+  z-index: 99999 !important;
+}
+
+.cl-userButtonPopoverCard {
+  background-color: #0c0c10 !important;
+  background: #0c0c10 !important;
+  opacity: 1 !important;
+  border: 1px solid rgba(212, 175, 55, 0.4) !important;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.98), 0 0 35px rgba(212, 175, 55, 0.25) !important;
+  border-radius: 1.25rem !important;
+}
+
+.cl-userButtonPopoverMain {
+  background-color: #0c0c10 !important;
+}
+
+.cl-userButtonPopoverActionButton {
+  background-color: #141419 !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 0.75rem !important;
+  margin-bottom: 0.35rem !important;
+  transition: all 0.2s ease !important;
+}
+
+.cl-userButtonPopoverActionButton:hover {
+  background-color: rgba(212, 175, 55, 0.2) !important;
+  border-color: rgba(212, 175, 55, 0.5) !important;
+}
+
+.cl-userButtonPopoverActionButtonText {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+.cl-userButtonPopoverActionButtonIcon {
+  color: #D4AF37 !important;
+}
+
+.cl-userPreview {
+  background-color: #141419 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 0.75rem !important;
+}
+
+.cl-userPreviewMainIdentifier {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+.cl-userPreviewSecondaryIdentifier {
+  color: #D4AF37 !important;
+}
+
+.cl-userButtonPopoverFooter {
+  background-color: #07070a !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
