@@ -7,6 +7,7 @@ import {
   Wind, Sun, CloudRain, Zap, ArrowRight, Clock, Award, ShieldCheck 
 } from "lucide-react";
 import Link from "next/link";
+import LuxuryDatePicker from "@/components/ui/LuxuryDatePicker";
 
 interface RouteOption {
   id: string;
@@ -134,15 +135,10 @@ export default function RouteOptimizer() {
 
               <div>
                 <label className="text-[10px] text-platinum/50 uppercase tracking-widest mb-1.5 block font-mono">Departure Date</label>
-                <div className="relative">
-                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gold" />
-                  <input 
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3.5 pl-12 text-white focus:border-gold/50 outline-none text-sm font-light"
-                  />
-                </div>
+                <LuxuryDatePicker
+                  value={date}
+                  onChange={(newDate) => setDate(newDate)}
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">

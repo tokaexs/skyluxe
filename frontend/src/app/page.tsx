@@ -11,6 +11,7 @@ import Link from "next/link";
 import { useRef, useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import GlassNavbar from "@/components/ui/GlassNavbar";
+import LuxuryDatePicker from "@/components/ui/LuxuryDatePicker";
 import { useAuth } from "@/context/AuthContext";
 import { useSkyLuxeStore } from "@/store/skyluxeStore";
 
@@ -871,8 +872,10 @@ function HomeContent() {
                   <label className="text-[10px] text-platinum/50 uppercase tracking-widest mb-2 flex items-center gap-1.5 font-mono">
                     <Calendar className="w-3.5 h-3.5 text-gold" /> Departure
                   </label>
-                  <input type="date" value={departDate} onChange={(e) => setDepartDate(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:border-gold/50 focus:outline-none transition-all text-sm [color-scheme:dark] hover:border-white/20" />
+                  <LuxuryDatePicker 
+                    value={departDate} 
+                    onChange={(d) => setDepartDate(d)} 
+                  />
                 </div>
                 <div className="md:col-span-1">
                   <label className="text-[10px] text-platinum/50 uppercase tracking-widest mb-2 flex items-center gap-1.5 font-mono">

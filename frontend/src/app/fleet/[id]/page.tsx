@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSkyLuxeStore } from "@/store/skyluxeStore";
+import LuxuryDatePicker from "@/components/ui/LuxuryDatePicker";
 
 const jetDatabase: Record<string, any> = {
   "gulfstream-g700": { name: "Gulfstream G700", class: "Ultra Long Range", pax: 19, range: "7,500 nm", speed: "Mach 0.925", hourlyRate: 14000, img: "https://images.unsplash.com/photo-1540962351504-03099e0a754b?q=80&w=2500" },
@@ -153,14 +154,11 @@ export default function JetConfiguration() {
                         className="w-full bg-transparent border-b border-white/20 pb-2 text-white placeholder-platinum/30 focus:outline-none focus:border-gold transition-colors font-light" 
                       />
                     </div>
-                    <div className="md:col-span-3">
-                      <label className="text-[10px] text-platinum/50 uppercase tracking-widest mb-1 block font-mono">Date</label>
-                      <input 
-                        type="date" 
-                        required
+                    <div className="md:col-span-4">
+                      <label className="text-[10px] text-platinum/50 uppercase tracking-widest mb-1 block font-mono">Flight Date</label>
+                      <LuxuryDatePicker 
                         value={leg.date}
-                        onChange={(e) => handleLegChange(index, "date", e.target.value)}
-                        className="w-full bg-transparent border-b border-white/20 pb-2 text-white focus:outline-none focus:border-gold transition-colors font-light [color-scheme:dark]" 
+                        onChange={(newDate) => handleLegChange(index, "date", newDate)}
                       />
                     </div>
                     <div className="md:col-span-1 flex justify-center pb-1">

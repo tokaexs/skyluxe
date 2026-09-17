@@ -5,6 +5,7 @@ import GlassNavbar from "@/components/ui/GlassNavbar";
 import { ArrowRight, Plane, MapPin, Calendar, Search } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import LuxuryDatePicker from "@/components/ui/LuxuryDatePicker";
 
 export default function CommercialSearch() {
   const router = useRouter();
@@ -131,20 +132,18 @@ export default function CommercialSearch() {
                     <option value="Bengaluru (BLR)">Bengaluru (BLR)</option>
                   </select>
                 </div>
-                <div className="md:col-span-2">
-                  <label className="text-[10px] text-platinum/50 uppercase tracking-widest mb-2 flex items-center gap-1">
-                    <Calendar className="w-3 h-3 text-gold" /> Date
+                <div className="md:col-span-3">
+                  <label className="text-[10px] text-platinum/50 uppercase tracking-widest mb-2 flex items-center gap-1 font-mono">
+                    <Calendar className="w-3 h-3 text-gold" /> Flight Date
                   </label>
-                  <input 
-                    type="date" 
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:border-gold/50 focus:outline-none transition-colors [color-scheme:dark]" 
+                  <LuxuryDatePicker 
+                    value={date} 
+                    onChange={(newDate) => setDate(newDate)} 
                   />
                 </div>
-                <div className="md:col-span-3">
-                  <button type="submit" className="w-full h-[58px] rounded-xl bg-gradient-to-r from-gold to-gold-light text-onyx font-bold text-lg hover:-translate-y-0.5 transition-transform shadow-[0_0_20px_rgba(212,175,55,0.4)] flex items-center justify-center gap-2">
-                    <Search className="w-5 h-5" /> Search Flights
+                <div className="md:col-span-2 flex items-end">
+                  <button type="submit" className="w-full h-[54px] rounded-xl bg-gradient-to-r from-gold to-gold-light text-onyx font-bold text-base hover:-translate-y-0.5 transition-transform shadow-[0_0_20px_rgba(212,175,55,0.4)] flex items-center justify-center gap-2 cursor-pointer">
+                    <Search className="w-4 h-4" /> Search Flights
                   </button>
                 </div>
               </div>
