@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSkyLuxeStore } from "@/store/skyluxeStore";
+import { useUser, useClerk } from "@clerk/nextjs";
 
 // Utility to manage cookies on the client side
 function setCookie(name: string, value: string, days: number) {
@@ -33,39 +34,45 @@ function eraseCookie(name: string) {
 interface AuthContextType {
   isAuthenticated: boolean;
   login: (token: string) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const { user, isSignedIn, isLoaded } = useUser();
+  const { signOut } = useClerk();
+  const [hasLegacyToken, setHasLegacyToken] = useState<boolean>(false);
   const router = useRouter();
 
   useEffect(() => {
-    // Check initial auth state on mount
+    // Check legacy token on mount
     const token = getCookie("skyluxe_auth_token");
     if (token) {
-      setIsAuthenticated(true);
-      // Automatically hydrate global user store
+      setHasLegacyToken(true);
       useSkyLuxeStore.getState().fetchInitialData();
     }
-    setIsLoading(false);
   }, []);
+
+  const isAuthenticated = Boolean(isSignedIn || hasLegacyToken);
+  const isLoading = !isLoaded;
 
   const login = (token: string) => {
     setCookie("skyluxe_auth_token", token, 7); // 7 days expiration
-    setIsAuthenticated(true);
+    setHasLegacyToken(true);
     useSkyLuxeStore.getState().fetchInitialData();
   };
 
-  const logout = () => {
+  const logout = async () => {
     eraseCookie("skyluxe_auth_token");
-    setIsAuthenticated(false);
-    // Reset store state optional
-    router.push("/auth/login");
+    setHasLegacyToken(false);
+    try {
+      await signOut({ redirectUrl: "/" });
+    } catch (e) {
+      console.error("Clerk sign out error:", e);
+      window.location.href = "/";
+    }
   };
 
   return (
