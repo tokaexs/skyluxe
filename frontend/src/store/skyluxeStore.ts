@@ -145,8 +145,9 @@ interface SkyLuxeState {
  
   // Actions
   fetchInitialData: () => Promise<void>;
-  updateProfile: (updated: Partial<SkyLuxeState["profile"]>) => Promise<void>;
-  updatePreferences: (prefs: Partial<SkyLuxeState["profile"]["preferences"]>) => Promise<void>;
+  syncUserFromClerk: (user: any) => void;
+  updateProfile: (profile: Partial<SkyLuxeState["profile"]>) => Promise<void>;
+  updatePreferences: (preferences: Partial<SkyLuxeState["profile"]["preferences"]>) => Promise<void>;
   addFunds: (amount: number) => Promise<void>;
   chargeWallet: (amount: number, description: string) => Promise<boolean>;
   addCoins: (amount: number) => Promise<void>;
@@ -168,11 +169,11 @@ interface SkyLuxeState {
 
 export const useSkyLuxeStore = create<SkyLuxeState>((set, get) => ({
   profile: {
-    name: "Eashan Sterling",
-    email: "eashan@company.com",
-    phone: "+1 (555) 019-9233",
+    name: "",
+    email: "",
+    phone: "",
     residence: "Mumbai, IND",
-    avatar: "ES",
+    avatar: "SL",
     passport: "United States • ••••••892",
     preferences: {
       dietary: "No shellfish. Preferred sparkling water.",
@@ -237,7 +238,7 @@ export const useSkyLuxeStore = create<SkyLuxeState>((set, get) => ({
     {
       id: "1",
       sender: "ai",
-      text: "Good evening, Mr. Sterling. I have analyzed your upcoming schedule. You have an executive summit in Dubai next Tuesday. I have pre-calculated the logistics from Mumbai (BOM) to Dubai (DWC).",
+      text: "Good evening. I have analyzed your upcoming schedule. You have an executive summit in Dubai next Tuesday. I have pre-calculated the logistics from Mumbai (BOM) to Dubai (DWC).",
       widget: "itinerary",
     },
   ],
@@ -263,6 +264,27 @@ export const useSkyLuxeStore = create<SkyLuxeState>((set, get) => ({
   ],
 
   // Actions implementations
+  syncUserFromClerk: (user: any) => {
+    if (!user) return;
+    const fullName = user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.username || "";
+    const email = user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress || "";
+    const phone = user.primaryPhoneNumber?.phoneNumber || user.phoneNumbers?.[0]?.phoneNumber || "";
+    const initials = fullName 
+      ? fullName.split(" ").filter(Boolean).map((n: string) => n[0]).join("").toUpperCase().substring(0, 2)
+      : (email ? email.substring(0, 2).toUpperCase() : "SL");
+
+    set((state) => ({
+      profile: {
+        ...state.profile,
+        id: user.id || state.profile.id,
+        name: fullName || state.profile.name || "SkyLuxe Member",
+        email: email || state.profile.email,
+        phone: phone || state.profile.phone,
+        avatar: initials || state.profile.avatar || "SL",
+      }
+    }));
+  },
+
   fetchInitialData: async () => {
     try {
       // 1. Fetch current user from JWT token

@@ -5,18 +5,26 @@ import { usePathname } from "next/navigation";
 import { Plane, LayoutDashboard, ShieldCheck, Wallet, User, Bell, LogOut, Gift, Star, Map, Navigation, Sparkles, Activity, Award, Home as HomeIcon } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useSkyLuxeStore } from "@/store/skyluxeStore";
+import { useUser, UserButton } from "@clerk/nextjs";
 import { useEffect } from "react";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { logout } = useAuth();
-  const { notifications, fetchInitialData, profile, currency, setCurrency } = useSkyLuxeStore();
+  const { user, isLoaded } = useUser();
+  const { notifications, fetchInitialData, profile, currency, setCurrency, syncUserFromClerk } = useSkyLuxeStore();
   
   useEffect(() => {
     if (fetchInitialData) {
       fetchInitialData();
     }
   }, [fetchInitialData]);
+
+  useEffect(() => {
+    if (isLoaded && user) {
+      syncUserFromClerk(user);
+    }
+  }, [user, isLoaded, syncUserFromClerk]);
 
   const unreadNotifCount = notifications.filter(n => n.unread).length;
 
@@ -98,7 +106,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Topbar */}
         <header className="sticky top-0 z-10 border-b border-white/10 bg-onyx/85 backdrop-blur-md px-8 py-4 flex justify-between items-center shrink-0">
           <h2 className="text-lg font-serif text-white font-medium">
-            Command Center • Welcome, {profile?.name ? `Mr. ${profile.name.split(" ").pop()}` : "Sterling"}
+            Command Center • Welcome, {user?.firstName ? user.firstName : profile?.name ? profile.name.split(" ")[0] : "Member"}
           </h2>
           
           <div className="flex items-center gap-4">
@@ -154,9 +162,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 )}
               </button>
             </Link>
-            <div className="w-9 h-9 rounded-full border border-gold/30 bg-gold/10 flex items-center justify-center cursor-pointer hover:border-gold/60 transition-colors" onClick={() => window.location.href='/dashboard/profile'}>
-              <span className="text-gold text-xs font-bold font-serif">{profile?.avatar || "ES"}</span>
-            </div>
+            
+            <Link href="/dashboard/profile" className="flex items-center">
+              {user?.imageUrl ? (
+                <img 
+                  src={user.imageUrl} 
+                  alt={user?.fullName || profile?.name || "User Avatar"} 
+                  className="w-9 h-9 rounded-full object-cover border border-gold/40 hover:border-gold shadow-[0_0_10px_rgba(212,175,55,0.2)] transition-all cursor-pointer" 
+                />
+              ) : (
+                <div className="w-9 h-9 rounded-full border border-gold/30 bg-gold/10 flex items-center justify-center cursor-pointer hover:border-gold/60 transition-colors">
+                  <span className="text-gold text-xs font-bold font-serif">
+                    {profile?.avatar || (user?.firstName ? user.firstName[0] : "SL")}
+                  </span>
+                </div>
+              )}
+            </Link>
           </div>
         </header>
 

@@ -1035,7 +1035,7 @@ function HomeContent() {
                     <Sparkles className="w-4 h-4 text-gold" />
                   </div>
                   <div className="glass-panel p-4 rounded-2xl rounded-tl-sm border border-white/10 bg-onyx/60">
-                    <p className="text-white text-sm font-light leading-relaxed">Good evening, Mr. Sterling. I've identified an optimal departure window — <span className="text-gold">Thursday 09:00 BOM→DWC</span> on the Gulfstream G650ER. Weather corridor clear, 0% delay probability.</p>
+                    <p className="text-white text-sm font-light leading-relaxed">Good evening. I&apos;ve identified an optimal departure window — <span className="text-gold">Thursday 09:00 BOM→DWC</span> on the Gulfstream G650ER. Weather corridor clear, 0% delay probability.</p>
                   </div>
                 </div>
 

@@ -13,8 +13,9 @@ import GlassNavbar from "@/components/ui/GlassNavbar";
 export default function MemberLounge() {
   const { profile, formatAmount } = useSkyLuxeStore();
   const [chatMessage, setChatMessage] = useState("");
+  const userName = profile?.name ? profile.name.split(" ")[0] : "Member";
   const [messages, setMessages] = useState<any[]>([
-    { sender: "desk", text: "Good day, Mr. Sterling. Welcome back to the SkyLuxe lead aviation desk. How may we assist your upcoming journey?" }
+    { sender: "desk", text: `Good day, ${userName}. Welcome back to the SkyLuxe lead aviation desk. How may we assist your upcoming journey?` }
   ]);
 
   const activeTier = (profile?.membership || "none").toLowerCase().replace(" ", "_");
@@ -34,7 +35,7 @@ export default function MemberLounge() {
         ...prev, 
         { 
           sender: "desk", 
-          text: `Understood, Mr. Sterling. I have logged your request regarding "${userMsg}" and forwarded it directly to the local FBO operations desk.` 
+          text: `Understood, ${userName}. I have logged your request regarding "${userMsg}" and forwarded it directly to the local FBO operations desk.` 
         }
       ]);
     }, 1200);

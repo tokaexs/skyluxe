@@ -289,7 +289,7 @@ export default function MyFlights() {
                   <div className="p-3 bg-white rounded-xl mb-4">
                     <QrCode className="w-24 h-24 text-black" />
                   </div>
-                  <p className="text-white font-medium">Eashan Sterling</p>
+                  <p className="text-white font-medium">{profile?.name || "SkyLuxe Member"}</p>
                   <p className="text-platinum/50 text-xs font-mono">Add to Apple Wallet</p>
                 </div>
               </motion.div>

@@ -6,6 +6,7 @@ import { ArrowLeft, ShieldCheck, CreditCard, Lock, Zap, CheckCircle, QrCode, Pla
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSkyLuxeStore, FlightBooking } from "@/store/skyluxeStore";
+import { useUser } from "@clerk/nextjs";
 import { api } from "@/lib/api";
 
 const loadRazorpayScript = () => {
@@ -29,6 +30,7 @@ const loadRazorpayScript = () => {
 function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useUser();
 
   const type = searchParams.get("type") || "private";
   const itemId = searchParams.get("id") || "gulfstream-g700";
@@ -112,8 +114,8 @@ function CheckoutContent() {
           seat_number: seat,
           class: seatRow > 0 && seatRow <= 3 ? "first" : seatRow >= 4 && seatRow <= 7 ? "business" : "economy",
           passengers: [{
-            firstName: profile.name.split(" ")[0] || "Eashan",
-            lastName: profile.name.split(" ")[1] || "Sterling",
+            firstName: user?.firstName || profile?.name?.split(" ")[0] || "SkyLuxe",
+            lastName: user?.lastName || profile?.name?.split(" ").slice(1).join(" ") || "Member",
             age: 35,
             passportNumber: "US892347234",
             nationality: "United States"
@@ -141,7 +143,9 @@ function CheckoutContent() {
             brandColor: bookingData.flight?.airline?.brandColor || "#D4AF37",
             iataCode: bookingData.flight?.airline?.iataCode || "AI",
             pnr: bookingData.bookingReference,
-            passengerName: `${bookingData.passengers?.[0]?.firstName || "Eashan"} ${bookingData.passengers?.[0]?.lastName || "Sterling"}`.toUpperCase(),
+            passengerName: (bookingData.passengers?.[0]?.firstName 
+              ? `${bookingData.passengers[0].firstName} ${bookingData.passengers[0].lastName || ""}`
+              : (user?.fullName || profile?.name || "SKYLUXE MEMBER")).toUpperCase(),
             fareClass: bookingData.class ? bookingData.class.toUpperCase() : "FIRST CLASS",
             boardingGroup: bookingData.class?.toLowerCase().includes("first") ? "GROUP A" : bookingData.class?.toLowerCase().includes("business") ? "GROUP B" : "GROUP C",
             bookingDbId: bookingData._id,
@@ -217,7 +221,9 @@ function CheckoutContent() {
                     brandColor: bookingData.flight?.airline?.brandColor || "#D4AF37",
                     iataCode: bookingData.flight?.airline?.iataCode || "AI",
                     pnr: bookingData.bookingReference,
-                    passengerName: `${bookingData.passengers?.[0]?.firstName || "Eashan"} ${bookingData.passengers?.[0]?.lastName || "Sterling"}`.toUpperCase(),
+                    passengerName: (bookingData.passengers?.[0]?.firstName 
+                      ? `${bookingData.passengers[0].firstName} ${bookingData.passengers[0].lastName || ""}`
+                      : (user?.fullName || profile?.name || "SKYLUXE MEMBER")).toUpperCase(),
                     fareClass: bookingData.class ? bookingData.class.toUpperCase() : "FIRST CLASS",
                     boardingGroup: bookingData.class?.toLowerCase().includes("first") ? "GROUP A" : bookingData.class?.toLowerCase().includes("business") ? "GROUP B" : "GROUP C",
                     bookingDbId: bookingData._id,
@@ -259,7 +265,7 @@ function CheckoutContent() {
                   legs: type === "private" ? legsList : undefined,
                   brandColor: "#D4AF37",
                   pnr: `SKL${verifyRes.bookingId.substring(0, 6)}`,
-                  passengerName: "EASHAN STERLING",
+                  passengerName: (user?.fullName || profile?.name || "SKYLUXE MEMBER").toUpperCase(),
                   fareClass: "FIRST CLASS",
                   boardingGroup: "GROUP A",
                   bookingDbId: verifyRes.bookingId
@@ -470,7 +476,7 @@ function CheckoutContent() {
                   <div className="relative z-10">
                     <p className="text-white/60 font-mono text-sm mb-2 tracking-[0.2em]">•••• •••• •••• 4242</p>
                     <div className="flex justify-between items-end">
-                      <p className="text-white font-medium uppercase tracking-widest text-sm">Eashan Sterling</p>
+                      <p className="text-white font-medium uppercase tracking-widest text-sm">{user?.fullName || profile?.name || "SKYLUXE MEMBER"}</p>
                       <p className="text-white/60 font-mono text-sm">12/28</p>
                     </div>
                   </div>
@@ -706,7 +712,7 @@ function CheckoutContent() {
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-y-4 gap-x-6 text-xs border-t border-white/5 pt-6">
                         <div>
                           <p className="text-[9px] text-platinum/40 uppercase tracking-widest font-mono mb-1">Passenger</p>
-                          <p className="text-white font-bold tracking-wide truncate">{generatedTicket.passengerName || "Eashan Sterling"}</p>
+                          <p className="text-white font-bold tracking-wide truncate">{generatedTicket.passengerName || user?.fullName || profile?.name || "SkyLuxe Member"}</p>
                         </div>
                         <div>
                           <p className="text-[9px] text-platinum/40 uppercase tracking-widest font-mono mb-1">Flight No</p>

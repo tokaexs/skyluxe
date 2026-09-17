@@ -6,6 +6,7 @@ import { Mic, Send, Sparkles, MapPin, Calendar, PlaneTakeoff, Navigation, Wind, 
 import AtmosphericGlobe from "@/components/3d/AtmosphericGlobe";
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import { useSkyLuxeStore } from "@/store/skyluxeStore";
 
 type Message = {
   id: string;
@@ -15,11 +16,13 @@ type Message = {
 };
 
 export default function ConciergeAI() {
+  const { profile } = useSkyLuxeStore();
+  const userName = profile?.name ? profile.name.split(" ")[0] : "Commander";
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
       sender: 'ai',
-      text: "Good evening, Mr. Sterling. I have analyzed your upcoming schedule. You have an executive summit in Dubai next Tuesday. I have pre-calculated the logistics from Mumbai (BOM) to Dubai (DWC).",
+      text: `Good evening, ${userName}. I have analyzed your upcoming schedule. You have an executive summit in Dubai next Tuesday. I have pre-calculated the logistics from Mumbai (BOM) to Dubai (DWC).`,
       widget: 'itinerary'
     }
   ]);

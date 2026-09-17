@@ -3,11 +3,13 @@
 import { motion } from "framer-motion";
 import { User, Globe, Coffee, Briefcase, Camera, Check, Loader2 } from "lucide-react";
 import { useSkyLuxeStore } from "@/store/skyluxeStore";
+import { useUser } from "@clerk/nextjs";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
 export default function Profile() {
-  const { profile, updateProfile, updatePreferences } = useSkyLuxeStore();
+  const { user, isLoaded } = useUser();
+  const { profile, updateProfile, updatePreferences, syncUserFromClerk } = useSkyLuxeStore();
   
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -23,24 +25,42 @@ export default function Profile() {
   const [savingPrefs, setSavingPrefs] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
 
-  // Sync component state with global store profile on mount/change
+  // Sync component state with Clerk user & global store profile on mount/change
   useEffect(() => {
-    if (profile) {
-      setName(profile.name || "");
-      setEmail(profile.email || "");
-      setPhone(profile.phone || "");
-      setResidence(profile.residence || "");
-      setDietary(profile.preferences?.dietary || "");
-      setBeverages(profile.preferences?.beverages || "");
-      setGroundTransport(profile.preferences?.groundTransport || "Luxury SUV (Cadillac Escalade / Range Rover)");
-      setCabinAmbiance(profile.preferences?.cabinAmbiance || "");
+    if (isLoaded && user) {
+      syncUserFromClerk(user);
     }
-  }, [profile]);
+  }, [user, isLoaded, syncUserFromClerk]);
+
+  useEffect(() => {
+    const clerkName = user?.fullName || `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || user?.username;
+    const clerkEmail = user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress;
+    const clerkPhone = user?.primaryPhoneNumber?.phoneNumber || user?.phoneNumbers?.[0]?.phoneNumber;
+
+    setName(profile.name || clerkName || "");
+    setEmail(profile.email || clerkEmail || "");
+    setPhone(profile.phone || clerkPhone || "");
+    setResidence(profile.residence || "Mumbai, IND");
+    setDietary(profile.preferences?.dietary || "");
+    setBeverages(profile.preferences?.beverages || "");
+    setGroundTransport(profile.preferences?.groundTransport || "Luxury SUV (Cadillac Escalade / Range Rover)");
+    setCabinAmbiance(profile.preferences?.cabinAmbiance || "");
+  }, [profile, user]);
 
   const handleSaveDetails = async () => {
     setSavingDetails(true);
     try {
       await updateProfile({ name, phone, residence });
+      if (user && name) {
+        const nameParts = name.trim().split(" ");
+        const firstName = nameParts[0] || "";
+        const lastName = nameParts.slice(1).join(" ") || "";
+        try {
+          await user.update({ firstName, lastName });
+        } catch (clerkErr) {
+          console.log("Clerk name sync note:", clerkErr);
+        }
+      }
       setSuccessMsg("Personal details updated successfully!");
       setTimeout(() => setSuccessMsg(""), 3000);
     } catch (e) {
@@ -63,7 +83,10 @@ export default function Profile() {
     }
   };
 
-  const initials = profile?.avatar || (name ? name.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2) : "SL");
+  const displayName = name || user?.fullName || profile?.name || "SkyLuxe Member";
+  const initials = displayName 
+    ? displayName.split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().substring(0, 2) 
+    : (email ? email.substring(0, 2).toUpperCase() : "SL");
 
   return (
     <div className="space-y-8 pb-12">
@@ -87,15 +110,16 @@ export default function Profile() {
         {/* Left Column: Avatar & Basic Info */}
         <div className="lg:col-span-1 space-y-8">
           <div className="glass-panel p-8 rounded-3xl border border-white/10 text-center relative">
-            <div className="w-32 h-32 mx-auto rounded-full bg-gold/10 border-2 border-gold/30 flex items-center justify-center relative mb-6">
-              <span className="text-4xl font-serif text-gold">{initials}</span>
-              <button className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-onyx border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors">
-                <Camera className="w-4 h-4 text-white" />
-              </button>
+            <div className="w-32 h-32 mx-auto rounded-full bg-gold/10 border-2 border-gold/30 flex items-center justify-center relative mb-6 overflow-hidden">
+              {user?.imageUrl ? (
+                <img src={user.imageUrl} alt={displayName} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-4xl font-serif text-gold">{initials}</span>
+              )}
             </div>
-            <h2 className="text-2xl font-serif font-bold text-white mb-1">{name || "SkyLuxe Member"}</h2>
+            <h2 className="text-2xl font-serif font-bold text-white mb-1">{displayName}</h2>
             <p className="text-platinum/50 text-sm mb-4">
-              {profile?.membership ? profile.membership.toUpperCase() : "Member"}
+              {profile?.membership && profile.membership !== "none" ? profile.membership.toUpperCase() : "Member"}
             </p>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold/10 text-gold text-xs font-medium border border-gold/20">
               <Check className="w-3 h-3" /> Identity Verified
