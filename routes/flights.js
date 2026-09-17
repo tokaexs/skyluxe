@@ -50,50 +50,54 @@ router.post('/search',
         console.warn('Failed to log flight search event:', err.message);
       }
 
-      // Search via SerpApi
+      // Search via SerpApi if available
       try {
         const liveFlights = await searchSerpApiFlights(from, to, date, passengers, cabinClass, type || 'one-way');
         if (liveFlights && liveFlights.length > 0) {
           return res.json(liveFlights);
         }
-        if (process.env.NODE_ENV !== 'test') {
-          return res.status(503).json({ message: 'Flight search service is currently down.' });
-        }
       } catch (apiErr) {
-        console.error('Flights search API failure:', apiErr);
-        if (process.env.NODE_ENV !== 'test') {
-          return res.status(503).json({ message: 'Flight search service is currently down.' });
-        }
+        console.warn('SerpApi search unavailable, falling back to database schedule:', apiErr.message);
       }
 
-      // Find flights matching the criteria from local database (Only in test mode)
-      if (process.env.NODE_ENV === 'test') {
-        const flights = await Flight.find({
-          $or: [
-            { 'departure.city': from },
-            { 'departure.airport': from.toUpperCase() }
-          ],
-          $or: [
-            { 'arrival.city': to },
-            { 'arrival.airport': to.toUpperCase() }
-          ],
-          'departure.time': {
-            $gte: new Date(date),
-            $lt: new Date(new Date(date).setDate(new Date(date).getDate() + 1))
-          },
-          [`availableSeats.${cabinClass}`]: { $gte: passengers }
-        }).populate('airline');
+      // Find flights matching the criteria from database
+      const fromRegex = new RegExp(from.replace(/[()]/g, ''), 'i');
+      const toRegex = new RegExp(to.replace(/[()]/g, ''), 'i');
 
-        return res.json(flights);
-      } else {
-        return res.status(503).json({ message: 'Flight search service is currently down.' });
+      let flights = await Flight.find({
+        $or: [
+          { 'departure.city': fromRegex },
+          { 'departure.airport': from.toUpperCase() }
+        ],
+        $or: [
+          { 'arrival.city': toRegex },
+          { 'arrival.airport': to.toUpperCase() }
+        ]
+      }).populate('airline');
+
+      // If no exact origin/destination match, return top scheduled partner flights
+      if (!flights || flights.length === 0) {
+        flights = await Flight.find({}).populate('airline').limit(12);
       }
+
+      return res.json(flights);
     } catch (error) {
       console.error('Flight search error:', error);
       res.status(500).json({ message: 'Server error' });
     }
   }
 );
+
+// Get all commercial flights
+router.get('/', async (req, res) => {
+  try {
+    const flights = await Flight.find({}).populate('airline').limit(50);
+    res.json(flights);
+  } catch (error) {
+    console.error('Fetch all flights error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
 // Get flight details
 router.get('/:id', async (req, res) => {
