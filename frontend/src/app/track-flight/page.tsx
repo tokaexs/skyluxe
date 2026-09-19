@@ -136,8 +136,8 @@ function TrackContent() {
       </div>
 
       {/* Search Input Widget */}
-      <form onSubmit={handleFormSubmit} className="glass-panel p-4 rounded-2xl border border-white/10 max-w-xl mx-auto w-full mb-12 flex gap-3 bg-onyx/80">
-        <div className="flex-grow flex items-center gap-3 px-3">
+      <form onSubmit={handleFormSubmit} className="glass-panel p-2 sm:p-4 rounded-2xl border border-white/10 max-w-xl mx-auto w-full mb-12 flex flex-col sm:flex-row gap-2 sm:gap-3 bg-onyx/80">
+        <div className="flex-grow flex items-center gap-3 px-3 py-2 sm:py-0">
           <Search className="w-5 h-5 text-gold shrink-0" />
           <input 
             type="text" 
@@ -147,7 +147,7 @@ function TrackContent() {
             className="w-full bg-transparent border-none text-white focus:outline-none placeholder-platinum/30 text-sm font-mono uppercase" 
           />
         </div>
-        <button type="submit" className="px-6 py-3 bg-gold hover:bg-gold-light text-onyx font-bold rounded-xl transition-all font-mono text-xs uppercase">
+        <button type="submit" className="w-full sm:w-auto px-6 py-3 bg-gold hover:bg-gold-light text-onyx font-bold rounded-xl transition-all font-mono text-xs uppercase shadow-lg shadow-gold/20">
           Track Status
         </button>
       </form>
@@ -162,13 +162,13 @@ function TrackContent() {
             className="space-y-8"
           >
             {/* Main Telemetry Panel */}
-            <div className="glass-panel p-8 rounded-3xl border border-white/10 relative overflow-hidden bg-onyx/90 shadow-2xl">
+            <div className="glass-panel p-5 sm:p-8 rounded-2xl sm:rounded-3xl border border-white/10 relative overflow-hidden bg-onyx/90 shadow-2xl">
               <div className="absolute top-0 right-0 w-64 h-64 bg-gold/10 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/4 pointer-events-none" />
               
               {/* Header Status Bar */}
-              <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-8 border-b border-white/5 pb-6">
                 <div>
-                  <h3 className="text-2xl font-serif font-bold text-white mb-1">{activeFlight.airline} {activeFlight.flightNo}</h3>
+                  <h3 className="text-xl sm:text-2xl font-serif font-bold text-white mb-1">{activeFlight.airline} {activeFlight.flightNo}</h3>
                   <p className="text-platinum/50 text-xs font-mono">{activeFlight.aircraft} Fleet Operations</p>
                 </div>
                 

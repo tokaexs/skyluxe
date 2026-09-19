@@ -26,7 +26,7 @@ export default function CommercialSearch() {
       <GlassNavbar />
 
       {/* Cinematic Hero */}
-      <section className="relative h-[85vh] flex items-center justify-center px-6">
+      <section className="relative min-h-[85vh] py-24 sm:py-32 flex items-center justify-center px-4 sm:px-6">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#020202]/50 to-[#020202] z-10" />
           <img 
@@ -41,15 +41,15 @@ export default function CommercialSearch() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-center mb-12"
+            className="text-center mb-8 sm:mb-12"
           >
             <span className="px-3 py-1 rounded-full bg-white/10 border border-white/20 text-[10px] text-platinum uppercase tracking-widest mb-4 inline-block backdrop-blur-sm">
               Global Commercial Aviation
             </span>
-            <h1 className="text-5xl md:text-7xl font-serif font-bold text-white mb-6 drop-shadow-2xl">
+            <h1 className="text-4xl sm:text-6xl md:text-7xl font-serif font-bold text-white mb-4 sm:mb-6 drop-shadow-2xl">
               Elevate Your <span className="text-gold">Journey.</span>
             </h1>
-            <p className="text-xl text-platinum/80 font-light max-w-2xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-xl text-platinum/80 font-light max-w-2xl mx-auto leading-relaxed">
               Book premium economy, business, and first-class tickets across India's leading commercial airlines.
             </p>
           </motion.div>
@@ -59,11 +59,11 @@ export default function CommercialSearch() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="glass-panel p-4 md:p-6 rounded-3xl border border-white/20 shadow-2xl backdrop-blur-xl bg-onyx/80 max-w-4xl mx-auto"
+            className="glass-panel p-4 sm:p-6 md:p-8 rounded-3xl border border-white/20 shadow-2xl backdrop-blur-xl bg-onyx/80 max-w-4xl mx-auto"
           >
             <form onSubmit={handleSearch}>
               {/* Toggle */}
-              <div className="flex gap-6 mb-6 border-b border-white/10 pb-4">
+              <div className="flex flex-wrap gap-4 sm:gap-6 mb-6 border-b border-white/10 pb-4">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input 
                     type="radio" 
@@ -153,9 +153,9 @@ export default function CommercialSearch() {
       </section>
 
       {/* Featured Airlines */}
-      <section className="py-24 px-6 lg:px-16 max-w-7xl mx-auto w-full relative z-10">
-        <h2 className="text-sm text-platinum/50 uppercase tracking-widest mb-10 text-center font-mono">Our Commercial Partners</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 items-center justify-items-center opacity-70">
+      <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-16 max-w-7xl mx-auto w-full relative z-10">
+        <h2 className="text-xs sm:text-sm text-platinum/50 uppercase tracking-widest mb-8 sm:mb-10 text-center font-mono">Our Commercial Partners</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 sm:gap-8 items-center justify-items-center opacity-70">
           <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Air_India_Logo.svg/1200px-Air_India_Logo.svg.png" alt="Air India" className="h-8 object-contain filter grayscale hover:grayscale-0 transition-all cursor-pointer" />
           <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/IndiGo_Airlines_logo.svg/1200px-IndiGo_Airlines_logo.svg.png" alt="IndiGo" className="h-8 object-contain filter grayscale hover:grayscale-0 transition-all cursor-pointer" />
           <img src="https://upload.wikimedia.org/wikipedia/en/thumb/f/f5/Vistara_Logo.svg/1200px-Vistara_Logo.svg.png" alt="Vistara" className="h-8 object-contain filter grayscale hover:grayscale-0 transition-all cursor-pointer" />

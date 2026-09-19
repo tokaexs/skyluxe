@@ -346,7 +346,7 @@ function CheckoutContent() {
     <>
       <AnimatePresence>
         {checkoutState === "idle" && (
-          <Link href={type === "commercial" ? "/commercial" : "/fleet"} className="absolute top-8 left-8 z-50 flex items-center gap-2 text-platinum/50 hover:text-white transition-colors text-sm font-light">
+          <Link href={type === "commercial" ? "/commercial" : "/fleet"} className="absolute top-6 sm:top-8 left-6 sm:left-8 z-50 flex items-center gap-2 text-platinum/50 hover:text-white transition-colors text-xs sm:text-sm font-light">
             <ArrowLeft className="w-4 h-4" /> Cancel Booking
           </Link>
         )}
@@ -360,42 +360,42 @@ function CheckoutContent() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.5 }}
-            className="w-full flex flex-col md:flex-row absolute inset-0 z-10"
+            className="w-full min-h-screen flex flex-col md:flex-row relative z-10 pt-16 md:pt-0"
           >
             {/* Left Panel: Invoice Details */}
-            <div className="w-full md:w-5/12 p-8 md:p-16 flex flex-col justify-center border-r border-white/5 bg-onyx/40 backdrop-blur-3xl h-full">
+            <div className="w-full md:w-5/12 p-6 sm:p-8 md:p-16 flex flex-col justify-center border-b md:border-b-0 md:border-r border-white/5 bg-onyx/40 backdrop-blur-3xl">
               <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8 }}>
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gold/30 bg-gold/5 backdrop-blur-md mb-8">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-gold/30 bg-gold/5 backdrop-blur-md mb-6 sm:mb-8">
                   <Lock className="w-4 h-4 text-gold" />
                   <span className="text-gold text-xs font-semibold tracking-wider uppercase">Secure Gateway</span>
                 </div>
 
                 {type === "private" && (
                   <>
-                    <h1 className="text-4xl font-serif font-bold text-white mb-2">{itemId.toUpperCase().replace("-", " ")}</h1>
-                    <p className="text-platinum/50 font-light mb-12">{legsList[0]?.from} — {legsList[legsList.length - 1]?.to} ({legsList.length} leg(s))</p>
+                    <h1 className="text-2xl sm:text-4xl font-serif font-bold text-white mb-2">{itemId.toUpperCase().replace("-", " ")}</h1>
+                    <p className="text-platinum/50 font-light mb-8 sm:mb-12">{legsList[0]?.from} — {legsList[legsList.length - 1]?.to} ({legsList.length} leg(s))</p>
 
-                    <div className="space-y-6 border-b border-white/10 pb-8 mb-8">
-                      <div className="flex justify-between items-center text-platinum/80 font-light text-sm">
+                    <div className="space-y-4 sm:space-y-6 border-b border-white/10 pb-6 sm:pb-8 mb-6 sm:mb-8">
+                      <div className="flex justify-between items-center text-platinum/80 font-light text-xs sm:text-sm">
                         <span>Charter rate ({legsList.length * 3.5} Flight Hours)</span>
-                        <span className="text-white">{formatAmount(queryPrice - (catering.includes("Michelin") ? 1500 : catering.includes("Caviar") ? 3000 : 0) - (chauffeur.includes("Maybach") ? 800 : chauffeur.includes("Helicopter") ? 2500 : 0) - (security.includes("Executive") ? 1200 : 0))}</span>
+                        <span className="text-white font-mono">{formatAmount(queryPrice - (catering.includes("Michelin") ? 1500 : catering.includes("Caviar") ? 3000 : 0) - (chauffeur.includes("Maybach") ? 800 : chauffeur.includes("Helicopter") ? 2500 : 0) - (security.includes("Executive") ? 1200 : 0))}</span>
                       </div>
                       {!catering.includes("Standard") && (
-                        <div className="flex justify-between items-center text-platinum/80 font-light text-sm">
+                        <div className="flex justify-between items-center text-platinum/80 font-light text-xs sm:text-sm">
                           <span>{catering}</span>
-                          <span className="text-white">{formatAmount(catering.includes("Michelin") ? 1500 : 3000)}</span>
+                          <span className="text-white font-mono">{formatAmount(catering.includes("Michelin") ? 1500 : 3000)}</span>
                         </div>
                       )}
                       {!chauffeur.includes("No") && (
-                        <div className="flex justify-between items-center text-platinum/80 font-light text-sm">
+                        <div className="flex justify-between items-center text-platinum/80 font-light text-xs sm:text-sm">
                           <span>{chauffeur}</span>
-                          <span className="text-white">{formatAmount(chauffeur.includes("Maybach") ? 800 : 2500)}</span>
+                          <span className="text-white font-mono">{formatAmount(chauffeur.includes("Maybach") ? 800 : 2500)}</span>
                         </div>
                       )}
                       {!security.includes("Standard") && (
-                        <div className="flex justify-between items-center text-platinum/80 font-light text-sm">
+                        <div className="flex justify-between items-center text-platinum/80 font-light text-xs sm:text-sm">
                           <span>{security}</span>
-                          <span className="text-white">{formatAmount(1200)}</span>
+                          <span className="text-white font-mono">{formatAmount(1200)}</span>
                         </div>
                       )}
                     </div>
@@ -404,24 +404,24 @@ function CheckoutContent() {
 
                 {type === "commercial" && (
                   <>
-                    <h1 className="text-4xl font-serif font-bold text-white mb-2">{itemId.toUpperCase()} Commercial</h1>
-                    <p className="text-platinum/50 font-light mb-12">{fromCode} — {toCode} (Seat {seat})</p>
+                    <h1 className="text-2xl sm:text-4xl font-serif font-bold text-white mb-2">{itemId.toUpperCase()} Commercial</h1>
+                    <p className="text-platinum/50 font-light mb-8 sm:mb-12">{fromCode} — {toCode} (Seat {seat})</p>
 
-                    <div className="space-y-6 border-b border-white/10 pb-8 mb-8">
-                      <div className="flex justify-between items-center text-platinum/80 font-light text-sm">
+                    <div className="space-y-4 sm:space-y-6 border-b border-white/10 pb-6 sm:pb-8 mb-6 sm:mb-8">
+                      <div className="flex justify-between items-center text-platinum/80 font-light text-xs sm:text-sm">
                         <span>Scheduled Ticket Base Price</span>
-                        <span className="text-white">{formatAmount(queryPrice - (seatRow > 0 && seatRow <= 3 ? 150 : seatRow >= 4 && seatRow <= 7 ? 80 : 0))}</span>
+                        <span className="text-white font-mono">{formatAmount(queryPrice - (seatRow > 0 && seatRow <= 3 ? 150 : seatRow >= 4 && seatRow <= 7 ? 80 : 0))}</span>
                       </div>
                       {seatRow > 0 && seatRow <= 3 && (
-                        <div className="flex justify-between items-center text-platinum/80 font-light text-sm">
+                        <div className="flex justify-between items-center text-platinum/80 font-light text-xs sm:text-sm">
                           <span>First Class Suite Allocation</span>
-                          <span className="text-white">{formatAmount(150)}</span>
+                          <span className="text-white font-mono">{formatAmount(150)}</span>
                         </div>
                       )}
                       {seatRow >= 4 && seatRow <= 7 && (
-                        <div className="flex justify-between items-center text-platinum/80 font-light text-sm">
+                        <div className="flex justify-between items-center text-platinum/80 font-light text-xs sm:text-sm">
                           <span>Business Flatbed Surcharge</span>
-                          <span className="text-white">{formatAmount(80)}</span>
+                          <span className="text-white font-mono">{formatAmount(80)}</span>
                         </div>
                       )}
                     </div>
@@ -430,13 +430,13 @@ function CheckoutContent() {
 
                 {type === "membership" && (
                   <>
-                    <h1 className="text-4xl font-serif font-bold text-white mb-2">{itemId.toUpperCase()} Membership</h1>
-                    <p className="text-platinum/50 font-light mb-12">Yearly Aviation Subscription</p>
+                    <h1 className="text-2xl sm:text-4xl font-serif font-bold text-white mb-2">{itemId.toUpperCase()} Membership</h1>
+                    <p className="text-platinum/50 font-light mb-8 sm:mb-12">Yearly Aviation Subscription</p>
 
-                    <div className="space-y-6 border-b border-white/10 pb-8 mb-8">
-                      <div className="flex justify-between items-center text-platinum/80 font-light text-sm">
+                    <div className="space-y-4 sm:space-y-6 border-b border-white/10 pb-6 sm:pb-8 mb-6 sm:mb-8">
+                      <div className="flex justify-between items-center text-platinum/80 font-light text-xs sm:text-sm">
                         <span>Elite Access & Hourly Cost Caps</span>
-                        <span className="text-white">{formatAmount(queryPrice)}</span>
+                        <span className="text-white font-mono">{formatAmount(queryPrice)}</span>
                       </div>
                     </div>
                   </>
@@ -445,7 +445,7 @@ function CheckoutContent() {
                 <div className="flex justify-between items-end">
                   <div>
                     <p className="text-xs text-platinum/50 uppercase tracking-widest mb-1 font-mono">Total Billed</p>
-                    <h2 className="text-5xl font-bold text-white tracking-tight">{formatAmount(queryPrice)}</h2>
+                    <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight">{formatAmount(queryPrice)}</h2>
                   </div>
                   <p className="text-gold text-sm font-medium">{currency}</p>
                 </div>
@@ -453,7 +453,7 @@ function CheckoutContent() {
             </div>
 
             {/* Right Panel: Payments */}
-            <div className="w-full md:w-7/12 p-8 md:p-16 flex flex-col justify-center items-center h-full">
+            <div className="w-full md:w-7/12 p-6 sm:p-8 md:p-16 flex flex-col justify-center items-center">
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -461,7 +461,7 @@ function CheckoutContent() {
                 className="w-full max-w-lg"
               >
                 {/* Credit Card graphic */}
-                <div className="w-full aspect-[1.586] rounded-3xl mb-10 relative overflow-hidden p-8 flex flex-col justify-between shadow-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-2xl">
+                <div className="w-full aspect-[1.586] rounded-2xl sm:rounded-3xl mb-8 sm:mb-10 relative overflow-hidden p-5 sm:p-8 flex flex-col justify-between shadow-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-2xl">
                   <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1620121478247-ec786b9be2fa?q=80&w=1000&auto=format&fit=crop')] opacity-20 mix-blend-overlay" />
                   <div className="absolute top-0 right-0 w-64 h-64 bg-gold/20 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/4" />
 

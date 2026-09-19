@@ -44,9 +44,29 @@ export default function ConciergeLayout({ children }: { children: React.ReactNod
         <div className="absolute bottom-1/4 right-1/3 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[100px]" />
       </div>
 
-      <div className="flex flex-1 pt-20 relative z-10">
-        {/* Left Sidebar */}
-        <aside data-lenis-prevent className="w-72 shrink-0 h-[calc(100vh-5rem)] sticky top-20 overflow-y-auto border-r border-white/5 bg-black/40 backdrop-blur-xl flex flex-col custom-scrollbar">
+      {/* Mobile Horizontal Module Navigation */}
+      <div className="lg:hidden pt-20 sm:pt-24 border-b border-white/10 bg-[#070709]/90 backdrop-blur-md relative z-20 px-4 py-3 overflow-x-auto custom-scrollbar flex items-center gap-2">
+        {conciergeNav.map((item) => {
+          const isActive = pathname === item.href;
+          const Icon = item.icon;
+          return (
+            <Link key={item.href} href={item.href} className="shrink-0">
+              <div className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${
+                isActive 
+                  ? "bg-gold text-onyx font-bold shadow-[0_0_12px_rgba(212,175,55,0.3)]" 
+                  : "bg-white/5 text-platinum/70 border border-white/5 hover:border-white/20"
+              }`}>
+                <Icon className="w-3.5 h-3.5 shrink-0" />
+                <span>{item.label}</span>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+
+      <div className="flex flex-1 pt-0 lg:pt-20 relative z-10 min-w-0">
+        {/* Left Desktop Sidebar */}
+        <aside data-lenis-prevent className="hidden lg:flex w-72 shrink-0 h-[calc(100vh-5rem)] sticky top-20 overflow-y-auto border-r border-white/5 bg-black/40 backdrop-blur-xl flex-col custom-scrollbar">
           {/* AI Status */}
           <div className="p-6 border-b border-white/5">
             <div className="flex items-center gap-3 mb-1">
@@ -128,10 +148,11 @@ export default function ConciergeLayout({ children }: { children: React.ReactNod
         </aside>
 
         {/* Main Content */}
-        <main data-lenis-prevent className="flex-1 min-w-0 overflow-y-auto h-[calc(100vh-5rem)]">
+        <main data-lenis-prevent className="flex-1 min-w-0 overflow-y-auto h-[calc(100vh-8.5rem)] lg:h-[calc(100vh-5rem)]">
           {children}
         </main>
       </div>
     </div>
   );
 }
+

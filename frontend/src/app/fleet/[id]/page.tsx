@@ -81,7 +81,7 @@ export default function JetConfiguration() {
       <GlassNavbar />
 
       {/* Cinematic Header */}
-      <section className="relative h-[60vh] flex items-end pb-16 px-6 lg:px-16">
+      <section className="relative min-h-[50vh] flex items-end pb-12 sm:pb-16 px-4 sm:px-6 lg:px-16 pt-32">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-onyx/50 to-onyx z-10" />
           <img src={jet.img} alt={jet.name} className="w-full h-full object-cover opacity-70" />
@@ -96,19 +96,19 @@ export default function JetConfiguration() {
             <span className="px-3 py-1 rounded-full bg-gold/20 border border-gold/30 text-[10px] text-gold uppercase tracking-widest mb-4 inline-block font-mono">
               {jet.class}
             </span>
-            <h1 className="text-5xl md:text-7xl font-serif font-bold text-white mb-6 drop-shadow-2xl">
+            <h1 className="text-3xl sm:text-5xl md:text-7xl font-serif font-bold text-white mb-4 sm:mb-6 drop-shadow-2xl">
               {jet.name}
             </h1>
             
-            <div className="flex flex-wrap items-center gap-6">
-              <div className="flex items-center gap-2 bg-black/40 backdrop-blur px-4 py-2 rounded-xl border border-white/10">
-                <Users className="w-4 h-4 text-gold" /> <span className="text-white text-sm">{jet.pax} Passengers</span>
+            <div className="flex flex-wrap items-center gap-3 sm:gap-6">
+              <div className="flex items-center gap-2 bg-black/40 backdrop-blur px-3 sm:px-4 py-2 rounded-xl border border-white/10 text-xs sm:text-sm">
+                <Users className="w-4 h-4 text-gold" /> <span className="text-white">{jet.pax} Passengers</span>
               </div>
-              <div className="flex items-center gap-2 bg-black/40 backdrop-blur px-4 py-2 rounded-xl border border-white/10">
-                <ShieldCheck className="w-4 h-4 text-gold" /> <span className="text-white text-sm">{jet.range} Range</span>
+              <div className="flex items-center gap-2 bg-black/40 backdrop-blur px-3 sm:px-4 py-2 rounded-xl border border-white/10 text-xs sm:text-sm">
+                <ShieldCheck className="w-4 h-4 text-gold" /> <span className="text-white">{jet.range} Range</span>
               </div>
-              <div className="flex items-center gap-2 bg-black/40 backdrop-blur px-4 py-2 rounded-xl border border-white/10">
-                <Zap className="w-4 h-4 text-gold" /> <span className="text-white text-sm">{jet.speed} Top Cruise</span>
+              <div className="flex items-center gap-2 bg-black/40 backdrop-blur px-3 sm:px-4 py-2 rounded-xl border border-white/10 text-xs sm:text-sm">
+                <Zap className="w-4 h-4 text-gold" /> <span className="text-white">{jet.speed} Top Cruise</span>
               </div>
             </div>
           </motion.div>
@@ -116,13 +116,13 @@ export default function JetConfiguration() {
       </section>
 
       {/* Advanced Booking Configuration */}
-      <section className="relative z-20 py-12 px-6 lg:px-16 max-w-[1600px] mx-auto w-full">
+      <section className="relative z-20 py-8 sm:py-12 px-4 sm:px-6 lg:px-16 max-w-[1600px] mx-auto w-full">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
           {/* Flight Operations Form */}
           <div className="lg:col-span-8 space-y-6">
-            <div className="glass-panel p-8 rounded-3xl border border-white/10">
-              <h2 className="text-2xl font-serif font-bold text-white mb-6">Flight Itinerary</h2>
+            <div className="glass-panel p-5 sm:p-8 rounded-3xl border border-white/10">
+              <h2 className="text-xl sm:text-2xl font-serif font-bold text-white mb-6">Flight Itinerary</h2>
               
               <div className="space-y-4">
                 {legs.map((leg, index) => (
@@ -132,7 +132,7 @@ export default function JetConfiguration() {
                     key={index} 
                     className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 items-end"
                   >
-                    <div className="md:col-span-4">
+                    <div className="md:col-span-3">
                       <label className="text-[10px] text-platinum/50 uppercase tracking-widest mb-1 block font-mono">Departure {index + 1}</label>
                       <input 
                         type="text" 
@@ -143,7 +143,7 @@ export default function JetConfiguration() {
                         className="w-full bg-transparent border-b border-white/20 pb-2 text-white placeholder-platinum/30 focus:outline-none focus:border-gold transition-colors font-light" 
                       />
                     </div>
-                    <div className="md:col-span-4">
+                    <div className="md:col-span-3">
                       <label className="text-[10px] text-platinum/50 uppercase tracking-widest mb-1 block font-mono">Destination {index + 1}</label>
                       <input 
                         type="text" 
@@ -154,7 +154,7 @@ export default function JetConfiguration() {
                         className="w-full bg-transparent border-b border-white/20 pb-2 text-white placeholder-platinum/30 focus:outline-none focus:border-gold transition-colors font-light" 
                       />
                     </div>
-                    <div className="md:col-span-4">
+                    <div className="md:col-span-5">
                       <label className="text-[10px] text-platinum/50 uppercase tracking-widest mb-1 block font-mono">Flight Date</label>
                       <LuxuryDatePicker 
                         value={leg.date}

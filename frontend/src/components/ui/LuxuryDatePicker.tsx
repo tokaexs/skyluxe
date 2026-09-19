@@ -158,7 +158,7 @@ export default function LuxuryDatePicker({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.96 }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute top-full left-0 mt-3 z-50 w-[330px] sm:w-[350px] bg-[#09090c]/95 backdrop-blur-3xl border border-gold/30 rounded-3xl p-5 shadow-[0_25px_70px_rgba(0,0,0,0.95),0_0_40px_rgba(212,175,55,0.15)]"
+            className="absolute top-full left-0 sm:left-auto sm:right-0 md:left-0 mt-3 z-50 w-[calc(100vw-2rem)] sm:w-[350px] max-w-[350px] bg-[#09090c]/95 backdrop-blur-3xl border border-gold/30 rounded-3xl p-4 sm:p-5 shadow-[0_25px_70px_rgba(0,0,0,0.95),0_0_40px_rgba(212,175,55,0.15)]"
           >
             {/* Ambient gold background glow */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-gold/10 rounded-full blur-[40px] pointer-events-none" />

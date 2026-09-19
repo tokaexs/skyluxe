@@ -285,7 +285,7 @@ function HomeContent() {
         
         <GlassNavbar />
 
-        <main className="max-w-7xl mx-auto px-6 pt-36 pb-20 w-full flex-1 flex flex-col gap-12">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-28 sm:pt-36 pb-20 w-full flex-1 flex flex-col gap-8 sm:gap-12">
           {/* Welcome Greeting */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-6 border-b border-white/10">
             <div>
@@ -295,7 +295,7 @@ function HomeContent() {
                 </span>
                 <span className="text-white/30 text-xs">• Operating System Online</span>
               </div>
-              <h1 className="text-4xl md:text-5xl font-serif font-bold text-white tracking-tight">
+              <h1 className="text-2xl sm:text-4xl md:text-5xl font-serif font-bold text-white tracking-tight">
                 Welcome back, {profile?.name || "Aviator"}
               </h1>
               <p className="text-platinum/50 font-light text-sm mt-2 max-w-2xl">
@@ -303,14 +303,14 @@ function HomeContent() {
               </p>
             </div>
             
-            <div className="flex gap-3">
-              <Link href="/commercial">
-                <button className="px-5 py-2.5 rounded-xl bg-gold text-onyx font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(212,175,55,0.25)] hover:bg-gold-light transition-all">
+            <div className="flex flex-wrap gap-3 w-full sm:w-auto">
+              <Link href="/commercial" className="flex-1 sm:flex-initial">
+                <button className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gold text-onyx font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(212,175,55,0.25)] hover:bg-gold-light transition-all">
                   Book Commercial Leg
                 </button>
               </Link>
-              <Link href="/fleet">
-                <button className="px-5 py-2.5 rounded-xl border border-white/10 hover:border-white/20 bg-white/5 text-white font-medium text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all">
+              <Link href="/fleet" className="flex-1 sm:flex-initial">
+                <button className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-white/10 hover:border-white/20 bg-white/5 text-white font-medium text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all">
                   Charter Private Jet
                 </button>
               </Link>
@@ -653,11 +653,11 @@ function HomeContent() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.3 }}
-            className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-gold/10 border border-gold/30 backdrop-blur-md mb-8"
+            className="inline-flex items-center gap-2 sm:gap-3 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-gold/10 border border-gold/30 backdrop-blur-md mb-6 sm:mb-8"
           >
             <span className="w-2 h-2 rounded-full bg-gold animate-pulse" />
-            <span className="text-gold text-xs uppercase tracking-[0.25em] font-mono font-medium">AI-Powered Aviation Operating System</span>
-            <Sparkles className="w-3.5 h-3.5 text-gold" />
+            <span className="text-gold text-[10px] sm:text-xs uppercase tracking-wider sm:tracking-[0.25em] font-mono font-medium">AI-Powered Aviation Operating System</span>
+            <Sparkles className="w-3.5 h-3.5 text-gold shrink-0" />
           </motion.div>
 
           {/* Main headline */}
@@ -665,7 +665,7 @@ function HomeContent() {
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.1, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-serif font-bold text-white leading-[0.95] tracking-tight mb-6"
+            className="text-4xl sm:text-6xl md:text-8xl lg:text-9xl font-serif font-bold text-white leading-[1.05] sm:leading-[0.95] tracking-tight mb-6 break-words"
           >
             The Future of<br />
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-gold via-[#FFF8DC] to-gold drop-shadow-[0_0_40px_rgba(212,175,55,0.5)]">
@@ -678,7 +678,7 @@ function HomeContent() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.7 }}
-            className="text-lg md:text-xl text-platinum/70 max-w-2xl mx-auto font-light leading-relaxed mb-10"
+            className="text-base sm:text-lg md:text-xl text-platinum/70 max-w-2xl mx-auto font-light leading-relaxed mb-8 sm:mb-10 px-2"
           >
             Commercial cabins. Private charters. AI concierge. Elite memberships.
             One sovereign platform for the world's most discerning travelers.
@@ -689,35 +689,35 @@ function HomeContent() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, delay: 0.9 }}
-            className="flex flex-col sm:flex-row items-center gap-4 mb-16"
+            className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 mb-12 sm:mb-16 w-full max-w-xl sm:max-w-none px-4 sm:px-0"
           >
-            <Link href="/commercial">
+            <Link href="/commercial" className="w-full sm:w-auto">
               <motion.button
                 whileHover={{ scale: 1.04, y: -2 }}
                 whileTap={{ scale: 0.97 }}
-                className="group relative px-8 py-4 rounded-full bg-gradient-to-r from-gold to-gold-light text-onyx font-bold text-base overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:shadow-[0_0_50px_rgba(212,175,55,0.7)] transition-shadow"
+                className="w-full sm:w-auto group relative px-8 py-4 rounded-full bg-gradient-to-r from-gold to-gold-light text-onyx font-bold text-base overflow-hidden shadow-[0_0_30px_rgba(212,175,55,0.4)] hover:shadow-[0_0_50px_rgba(212,175,55,0.7)] transition-shadow flex items-center justify-center"
               >
                 <span className="flex items-center gap-3">
                   Book a Flight <PlaneTakeoff className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                 </span>
               </motion.button>
             </Link>
-            <Link href="/fleet">
+            <Link href="/fleet" className="w-full sm:w-auto">
               <motion.button
                 whileHover={{ scale: 1.04, y: -2 }}
                 whileTap={{ scale: 0.97 }}
-                className="group px-8 py-4 rounded-full glass-panel border border-gold/30 text-gold font-medium text-base hover:bg-gold/10 transition-all"
+                className="w-full sm:w-auto group px-8 py-4 rounded-full glass-panel border border-gold/30 text-gold font-medium text-base hover:bg-gold/10 transition-all flex items-center justify-center"
               >
                 <span className="flex items-center gap-3">
                   Private Jet Fleet <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </span>
               </motion.button>
             </Link>
-            <Link href="/concierge">
+            <Link href="/concierge" className="w-full sm:w-auto">
               <motion.button
                 whileHover={{ scale: 1.04, y: -2 }}
                 whileTap={{ scale: 0.97 }}
-                className="group px-8 py-4 rounded-full glass-panel border border-white/10 text-platinum/80 font-medium text-base hover:border-white/30 hover:text-white transition-all"
+                className="w-full sm:w-auto group px-8 py-4 rounded-full glass-panel border border-white/10 text-platinum/80 font-medium text-base hover:border-white/30 hover:text-white transition-all flex items-center justify-center"
               >
                 <span className="flex items-center gap-3">
                   <Sparkles className="w-4 h-4 text-gold" /> AI Concierge
@@ -755,7 +755,7 @@ function HomeContent() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 1.4 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex items-center gap-6"
+          className="absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 z-20 hidden md:flex items-center gap-4 sm:gap-6"
         >
           {[
             { label: "Commercial", href: "/commercial", icon: Plane },
@@ -830,11 +830,11 @@ function HomeContent() {
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="glass-panel p-7 md:p-9 rounded-3xl border border-white/10 shadow-2xl bg-gradient-to-br from-onyx/80 to-black/60 max-w-5xl mx-auto mb-12 relative overflow-hidden"
+            className="glass-panel p-5 sm:p-7 md:p-9 rounded-3xl border border-white/10 shadow-2xl bg-gradient-to-br from-onyx/80 to-black/60 max-w-5xl mx-auto mb-12 relative overflow-hidden"
           >
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-gold/50 to-transparent" />
             <form onSubmit={handleCommercialSearch} className="space-y-6">
-              <div className="flex gap-6 border-b border-white/5 pb-4">
+              <div className="flex flex-wrap gap-4 sm:gap-6 border-b border-white/5 pb-4">
                 {["one-way", "round-trip", "multi-city"].map((type) => (
                   <label key={type} className="flex items-center gap-2 cursor-pointer">
                     <input type="radio" name="tripType" checked={tripType === type} onChange={() => setTripType(type)} className="accent-gold h-4 w-4" />
@@ -844,7 +844,7 @@ function HomeContent() {
                   </label>
                 ))}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-end">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-5 items-end">
                 <div className="md:col-span-3">
                   <label className="text-[10px] text-platinum/50 uppercase tracking-widest mb-2 flex items-center gap-1.5 font-mono">
                     <MapPin className="w-3.5 h-3.5 text-gold" /> Origin FBO
@@ -912,7 +912,7 @@ function HomeContent() {
                   whileHover={{ scale: 1.02, y: -1 }}
                   whileTap={{ scale: 0.98 }}
                   type="submit"
-                  className="px-10 h-14 rounded-xl bg-gradient-to-r from-gold to-gold-light text-onyx font-bold shadow-[0_0_25px_rgba(212,175,55,0.4)] hover:shadow-[0_0_40px_rgba(212,175,55,0.6)] transition-shadow flex items-center gap-2"
+                  className="w-full sm:w-auto px-10 h-14 rounded-xl bg-gradient-to-r from-gold to-gold-light text-onyx font-bold shadow-[0_0_25px_rgba(212,175,55,0.4)] hover:shadow-[0_0_40px_rgba(212,175,55,0.6)] transition-shadow flex items-center justify-center gap-2 cursor-pointer"
                 >
                   Search Flight Manifests <ArrowRight className="w-5 h-5" />
                 </motion.button>

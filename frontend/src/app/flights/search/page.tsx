@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import GlassNavbar from "@/components/ui/GlassNavbar";
-import { ArrowRight, Clock, ShieldCheck, Plane, Check, Sparkles, Filter, SlidersHorizontal, Map, Loader2 } from "lucide-react";
+import { ArrowRight, Clock, ShieldCheck, Plane, Check, Sparkles, Filter, SlidersHorizontal, Map, Loader2, X } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
@@ -175,6 +175,7 @@ function SearchResultsContent() {
   const [selectedClass, setSelectedClass] = useState(initialClass);
   const [selectedAircrafts, setSelectedAircrafts] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<"price" | "duration" | "departure">("price");
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -282,25 +283,105 @@ function SearchResultsContent() {
       return 0;
     });
 
+  // Filter content helper component
+  const renderFilterContent = () => (
+    <div className="space-y-6">
+      {/* Price Range */}
+      <div className="space-y-3">
+        <div className="flex justify-between items-center text-xs font-mono">
+          <span className="text-platinum/50 uppercase">Max Tariff</span>
+          <span className="text-gold font-bold">{formatAmount(maxPrice)}</span>
+        </div>
+        <input 
+          type="range" 
+          min={currency === "USD" ? 100 : 100 * 83} 
+          max={currency === "USD" ? 1500 : 1500 * 83} 
+          step={currency === "USD" ? 50 : 50 * 83}
+          value={currency === "USD" ? maxPrice : Math.round(maxPrice * 83)} 
+          onChange={(e) => {
+            const val = Number(e.target.value);
+            setMaxPrice(currency === "USD" ? val : val / 83);
+          }}
+          className="w-full accent-gold bg-white/10 h-1 rounded"
+        />
+      </div>
+
+      {/* Airlines Checklist */}
+      <div className="space-y-3">
+        <h4 className="text-[10px] text-platinum/50 uppercase tracking-widest font-mono">Airline Partners</h4>
+        <div className="space-y-2">
+          {["Air India", "Vistara", "IndiGo", "Emirates", "Akasa Air", "Singapore Airlines", "Qatar Airways"].map((airline) => (
+            <label key={airline} className="flex items-center gap-3 text-sm text-platinum/80 cursor-pointer hover:text-white transition-colors">
+              <input 
+                type="checkbox" 
+                checked={selectedAirlines.includes(airline)}
+                onChange={() => handleAirlineToggle(airline)}
+                className="accent-gold rounded border-white/20 bg-transparent" 
+              />
+              <span>{airline}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Stops */}
+      <div className="space-y-3">
+        <h4 className="text-[10px] text-platinum/50 uppercase tracking-widest font-mono">Stopovers</h4>
+        <div className="space-y-2">
+          <label className="flex items-center gap-3 text-sm text-platinum/80 cursor-pointer hover:text-white transition-colors">
+            <input 
+              type="checkbox" 
+              checked={selectedStops.includes(0)}
+              onChange={() => setSelectedStops(prev => prev.includes(0) ? prev.filter(s => s !== 0) : [...prev, 0])}
+              className="accent-gold rounded border-white/20" 
+            />
+            <span>Direct Flight</span>
+          </label>
+        </div>
+      </div>
+
+      {/* Aircraft types */}
+      <div className="space-y-3">
+        <h4 className="text-[10px] text-platinum/50 uppercase tracking-widest font-mono">Aircraft Fleet</h4>
+        <div className="space-y-2">
+          {["A350", "787", "777", "A321", "737", "A380"].map((ac) => {
+            const label = ac === "A350" ? "Airbus A350" : ac === "787" ? "Boeing 787" : ac === "777" ? "Boeing 777" : ac === "A321" ? "Airbus A321" : ac === "A380" ? "Airbus A380" : "Boeing 737";
+            return (
+              <label key={ac} className="flex items-center gap-3 text-sm text-platinum/80 cursor-pointer hover:text-white transition-colors">
+                <input 
+                  type="checkbox" 
+                  checked={selectedAircrafts.includes(ac)}
+                  onChange={() => handleAircraftToggle(ac)}
+                  className="accent-gold rounded border-white/20" 
+                />
+                <span>{label}</span>
+              </label>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="relative z-10 flex-grow flex flex-col pt-32 pb-24 px-6 lg:px-16 max-w-7xl mx-auto w-full">
+    <div className="relative z-10 flex-grow flex flex-col pt-28 sm:pt-32 pb-24 px-4 sm:px-6 lg:px-16 max-w-7xl mx-auto w-full">
       {/* Header Overview Card */}
-      <div className="glass-panel p-6 rounded-3xl border border-white/10 mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-onyx/80">
+      <div className="glass-panel p-5 sm:p-6 rounded-3xl border border-white/10 mb-6 sm:mb-8 flex flex-col md:flex-row md:items-center justify-between gap-5 bg-onyx/80">
         <div>
-          <div className="flex items-center gap-3 text-white mb-2">
-            <h1 className="text-2xl md:text-3xl font-serif font-bold">{fromCode === "BOM" ? "Mumbai" : fromCode} ({fromCode})</h1>
-            <ArrowRight className="w-5 h-5 text-gold" />
-            <h1 className="text-2xl md:text-3xl font-serif font-bold">{toCode === "DXB" || toCode === "DWC" ? "Dubai" : toCode} ({toCode})</h1>
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-white mb-2">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-serif font-bold">{fromCode === "BOM" ? "Mumbai" : fromCode} ({fromCode})</h1>
+            <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-gold" />
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-serif font-bold">{toCode === "DXB" || toCode === "DWC" ? "Dubai" : toCode} ({toCode})</h1>
           </div>
-          <p className="text-platinum/50 text-xs font-mono">{formattedDate} • {passengers} Seats • {tripType.toUpperCase()} • Cabin: {selectedClass}</p>
+          <p className="text-platinum/50 text-[11px] sm:text-xs font-mono">{formattedDate} • {passengers} Seats • {tripType.toUpperCase()} • Cabin: {selectedClass}</p>
         </div>
         
-        <div className="flex gap-2 p-1 bg-white/5 border border-white/5 rounded-xl">
+        <div className="flex flex-wrap gap-1.5 p-1 bg-white/5 border border-white/5 rounded-xl self-start md:self-auto">
           {["All", "Economy", "Business", "First"].map(cls => (
             <button 
               key={cls}
               onClick={() => setSelectedClass(cls)}
-              className={`px-4 py-2 rounded-lg text-xs font-semibold uppercase tracking-wider font-mono transition-colors ${selectedClass === cls ? 'bg-gold text-onyx shadow-[0_0_12px_rgba(212,175,55,0.3)]' : 'text-platinum/60 hover:text-white'}`}
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-semibold uppercase tracking-wider font-mono transition-colors ${selectedClass === cls ? 'bg-gold text-onyx shadow-[0_0_12px_rgba(212,175,55,0.3)]' : 'text-platinum/60 hover:text-white'}`}
             >
               {cls}
             </button>
@@ -308,96 +389,34 @@ function SearchResultsContent() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Filter Sidebar */}
-        <aside className="lg:col-span-3 glass-panel p-6 rounded-3xl border border-white/10 space-y-8 bg-onyx/40">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
+        {/* Desktop Filter Sidebar */}
+        <aside className="hidden lg:block lg:col-span-3 glass-panel p-6 rounded-3xl border border-white/10 space-y-8 bg-onyx/40">
           <div className="flex items-center justify-between border-b border-white/5 pb-4">
             <h3 className="text-white font-serif font-bold text-lg flex items-center gap-2"><Filter className="w-4 h-4 text-gold" /> Filters</h3>
             <span className="text-[10px] text-platinum/40 uppercase tracking-widest font-mono">{filteredFlights.length} found</span>
           </div>
 
-          {/* Price Range */}
-          <div className="space-y-3">
-            <div className="flex justify-between items-center text-xs font-mono">
-              <span className="text-platinum/50 uppercase">Max Tariff</span>
-              <span className="text-gold font-bold">{formatAmount(maxPrice)}</span>
-            </div>
-            <input 
-              type="range" 
-              min={currency === "USD" ? 100 : 100 * 83} 
-              max={currency === "USD" ? 1500 : 1500 * 83} 
-              step={currency === "USD" ? 50 : 50 * 83}
-              value={currency === "USD" ? maxPrice : Math.round(maxPrice * 83)} 
-              onChange={(e) => {
-                const val = Number(e.target.value);
-                setMaxPrice(currency === "USD" ? val : val / 83);
-              }}
-              className="w-full accent-gold bg-white/10 h-1 rounded"
-            />
-          </div>
-
-          {/* Airlines Checklist */}
-          <div className="space-y-3">
-            <h4 className="text-[10px] text-platinum/50 uppercase tracking-widest font-mono">Airline Partners</h4>
-            <div className="space-y-2">
-              {["Air India", "Vistara", "IndiGo", "Emirates", "Akasa Air", "Singapore Airlines", "Qatar Airways"].map((airline) => (
-                <label key={airline} className="flex items-center gap-3 text-sm text-platinum/80 cursor-pointer hover:text-white transition-colors">
-                  <input 
-                    type="checkbox" 
-                    checked={selectedAirlines.includes(airline)}
-                    onChange={() => handleAirlineToggle(airline)}
-                    className="accent-gold rounded border-white/20 bg-transparent" 
-                  />
-                  <span>{airline}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Stops */}
-          <div className="space-y-3">
-            <h4 className="text-[10px] text-platinum/50 uppercase tracking-widest font-mono">Stopovers</h4>
-            <div className="space-y-2">
-              <label className="flex items-center gap-3 text-sm text-platinum/80 cursor-pointer hover:text-white transition-colors">
-                <input 
-                  type="checkbox" 
-                  checked={selectedStops.includes(0)}
-                  onChange={() => setSelectedStops(prev => prev.includes(0) ? prev.filter(s => s !== 0) : [...prev, 0])}
-                  className="accent-gold rounded border-white/20" 
-                />
-                <span>Direct Flight</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Aircraft types */}
-          <div className="space-y-3">
-            <h4 className="text-[10px] text-platinum/50 uppercase tracking-widest font-mono">Aircraft Fleet</h4>
-            <div className="space-y-2">
-              {["A350", "787", "777", "A321", "737", "A380"].map((ac) => {
-                const label = ac === "A350" ? "Airbus A350" : ac === "787" ? "Boeing 787" : ac === "777" ? "Boeing 777" : ac === "A321" ? "Airbus A321" : ac === "A380" ? "Airbus A380" : "Boeing 737";
-                return (
-                  <label key={ac} className="flex items-center gap-3 text-sm text-platinum/80 cursor-pointer hover:text-white transition-colors">
-                    <input 
-                      type="checkbox" 
-                      checked={selectedAircrafts.includes(ac)}
-                      onChange={() => handleAircraftToggle(ac)}
-                      className="accent-gold rounded border-white/20" 
-                    />
-                    <span>{label}</span>
-                  </label>
-                );
-              })}
-            </div>
-          </div>
+          {renderFilterContent()}
         </aside>
 
         {/* Results Side */}
         <div className="lg:col-span-9 space-y-6">
+          {/* Mobile Filter Trigger Bar */}
+          <div className="lg:hidden flex items-center justify-between gap-3 bg-white/[0.03] border border-white/10 p-3.5 rounded-2xl">
+            <span className="text-xs font-mono text-platinum/60">{filteredFlights.length} manifests available</span>
+            <button
+              onClick={() => setMobileFilterOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gold/15 text-gold border border-gold/30 text-xs font-bold font-mono uppercase tracking-wider"
+            >
+              <Filter className="w-3.5 h-3.5" /> Filter Options
+            </button>
+          </div>
+
           {/* Sorting Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white/[0.02] border border-white/5 p-4 rounded-2xl text-xs font-mono text-platinum/50">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 bg-white/[0.02] border border-white/5 p-4 rounded-2xl text-xs font-mono text-platinum/50">
             <span className="flex items-center gap-2"><SlidersHorizontal className="w-3.5 h-3.5 text-gold" /> SORT BY</span>
-            <div className="flex gap-4">
+            <div className="flex flex-wrap gap-3 sm:gap-4 text-[11px] sm:text-xs">
               <button 
                 onClick={() => setSortBy("price")} 
                 className={`transition-colors uppercase tracking-wider ${sortBy === "price" ? "text-gold font-bold" : "hover:text-white"}`}
@@ -422,19 +441,19 @@ function SearchResultsContent() {
           </div>
 
           {/* Map Preview of Route */}
-          <div className="glass-panel p-6 rounded-3xl border border-white/10 relative overflow-hidden bg-gradient-to-r from-gold/5 to-transparent h-48 flex items-center justify-between">
+          <div className="glass-panel p-5 sm:p-6 rounded-3xl border border-white/10 relative overflow-hidden bg-gradient-to-r from-gold/5 to-transparent min-h-[140px] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="relative z-10 max-w-sm">
-              <span className="text-gold text-[10px] uppercase tracking-widest font-mono flex items-center gap-1.5 mb-2">
+              <span className="text-gold text-[10px] uppercase tracking-widest font-mono flex items-center gap-1.5 mb-1.5">
                 <Map className="w-3.5 h-3.5" /> Vector Route Path
               </span>
-              <h3 className="text-white font-serif font-bold text-xl mb-2">Flight Operations Live Map</h3>
+              <h3 className="text-white font-serif font-bold text-lg sm:text-xl mb-1 sm:mb-2">Flight Operations Live Map</h3>
               <p className="text-platinum/50 text-xs leading-relaxed font-light">
                 Direct transcontinental routing between {fromCode} and {toCode} FBO lounges. High-speed jetstream optimization.
               </p>
             </div>
             
-            <div className="absolute inset-y-0 right-0 w-1/2 flex items-center justify-center p-4">
-              <svg viewBox="0 0 300 120" className="w-full h-full opacity-60">
+            <div className="relative md:absolute inset-y-0 right-0 w-full md:w-1/2 flex items-center justify-center p-2 sm:p-4">
+              <svg viewBox="0 0 300 120" className="w-full h-28 sm:h-full opacity-60">
                 <circle cx="50" cy="60" r="4" fill="#D4AF37" />
                 <text x="50" y="45" fill="#E5E4E2" fontSize="9" fontFamily="monospace" textAnchor="middle">{fromCode}</text>
                 
@@ -454,7 +473,7 @@ function SearchResultsContent() {
           {/* List of Results */}
           <div className="space-y-4">
             {loading ? (
-              <div className="glass-panel p-16 rounded-3xl border border-white/10 text-center flex flex-col items-center justify-center">
+              <div className="glass-panel p-12 sm:p-16 rounded-3xl border border-white/10 text-center flex flex-col items-center justify-center">
                 <Loader2 className="w-8 h-8 text-gold animate-spin mb-4" />
                 <p className="text-white text-sm font-medium">Retrieving active flight manifests...</p>
               </div>
@@ -465,22 +484,22 @@ function SearchResultsContent() {
                   layout
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="glass-panel p-6 rounded-3xl border border-white/10 hover:border-gold/30 hover:bg-white/[0.01] transition-all duration-300 group flex flex-col md:flex-row gap-6 items-center"
+                  className="glass-panel p-5 sm:p-6 rounded-3xl border border-white/10 hover:border-gold/30 hover:bg-white/[0.01] transition-all duration-300 group flex flex-col md:flex-row gap-5 sm:gap-6 items-start md:items-center"
                   style={{ borderLeft: `4px solid ${flight.brandColor || '#D4AF37'}` }}
                 >
                   {/* Airline Brand */}
-                  <div className="w-full md:w-1/4 flex items-center gap-4">
+                  <div className="w-full md:w-1/4 flex items-center gap-3 sm:gap-4">
                     <SearchCardLogo 
                       logoUrl={flight.logo} 
                       airlineName={flight.airline} 
                       brandColor={flight.brandColor} 
                     />
-                    <div className="flex flex-col gap-1">
-                      <p className="text-sm font-semibold text-white flex items-center gap-1.5">
+                    <div className="flex flex-col gap-1 min-w-0">
+                      <p className="text-sm font-semibold text-white truncate">
                         {flight.airline}
                       </p>
-                      <p className="text-[11px] font-mono text-platinum/50">{flight.id} • {flight.aircraft}</p>
-                      <div className="flex flex-wrap gap-1 mt-1">
+                      <p className="text-[11px] font-mono text-platinum/50 truncate">{flight.id} • {flight.aircraft}</p>
+                      <div className="flex flex-wrap gap-1 mt-0.5">
                         {flight.tags.map((tag: string) => (
                           <span key={tag} className="text-[9px] bg-white/5 px-2 py-0.5 rounded text-platinum/60 font-mono">{tag}</span>
                         ))}
@@ -489,31 +508,31 @@ function SearchResultsContent() {
                   </div>
 
                   {/* Flight Timeline */}
-                  <div className="flex-grow w-full flex items-center justify-between gap-6 px-4">
-                    <div className="text-center">
-                      <p className="text-2xl font-serif font-bold text-white leading-tight">{flight.departure.time}</p>
+                  <div className="flex-grow w-full flex items-center justify-between gap-3 sm:gap-6 px-1 sm:px-4 py-2 sm:py-0 border-y md:border-y-0 border-white/5">
+                    <div className="text-center min-w-[60px]">
+                      <p className="text-xl sm:text-2xl font-serif font-bold text-white leading-tight">{flight.departure.time}</p>
                       <p className="text-xs text-platinum/50 font-mono mt-1">{fromCode}</p>
                     </div>
                     
-                    <div className="flex-1 flex flex-col items-center">
-                      <p className="text-[9px] text-platinum/40 uppercase tracking-widest font-mono mb-2">{flight.duration}</p>
+                    <div className="flex-1 flex flex-col items-center px-2">
+                      <p className="text-[9px] text-platinum/40 uppercase tracking-widest font-mono mb-1 sm:mb-2">{flight.duration}</p>
                       <div className="w-full border-t border-dashed border-white/20 relative">
-                        <Plane className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 text-gold rotate-90" />
+                        <Plane className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 text-gold rotate-90" />
                       </div>
-                      <p className="text-[9px] text-gold uppercase tracking-widest font-mono mt-2">{flight.stops === 0 ? "Nonstop" : `${flight.stops} Stop`}</p>
+                      <p className="text-[9px] text-gold uppercase tracking-widest font-mono mt-1 sm:mt-2">{flight.stops === 0 ? "Nonstop" : `${flight.stops} Stop`}</p>
                     </div>
                     
-                    <div className="text-center">
-                      <p className="text-2xl font-serif font-bold text-white leading-tight">{flight.arrival.time}</p>
+                    <div className="text-center min-w-[60px]">
+                      <p className="text-xl sm:text-2xl font-serif font-bold text-white leading-tight">{flight.arrival.time}</p>
                       <p className="text-xs text-platinum/50 font-mono mt-1">{toCode}</p>
                     </div>
                   </div>
 
                   {/* Price & Book */}
-                  <div className="w-full md:w-1/4 flex flex-col items-end md:items-end justify-center border-t md:border-t-0 md:border-l border-white/5 pt-4 md:pt-0 md:pl-6 gap-3">
+                  <div className="w-full md:w-1/4 flex flex-col md:items-end justify-center border-t md:border-t-0 md:border-l border-white/5 pt-3 md:pt-0 md:pl-6 gap-3">
                     <div className="text-right w-full flex md:flex-col justify-between items-center md:items-end">
                       <span className="text-[10px] text-platinum/50 font-mono uppercase">{flight.classType}</span>
-                      <span className="text-2xl md:text-3xl font-bold text-white font-serif">{formatAmount(flight.price)}</span>
+                      <span className="text-xl sm:text-2xl md:text-3xl font-bold text-white font-serif">{formatAmount(flight.price)}</span>
                     </div>
                     
                     <Link href={`/flights/${flight.id}?from=${fromCode}&to=${toCode}&date=${dateStr}&passengers=${passengers}&class=${selectedClass}`} className="w-full">
@@ -525,7 +544,7 @@ function SearchResultsContent() {
                 </motion.div>
               ))
             ) : (
-              <div className="glass-panel p-16 rounded-3xl border border-white/10 text-center">
+              <div className="glass-panel p-12 sm:p-16 rounded-3xl border border-white/10 text-center">
                 <Plane className="w-12 h-12 text-platinum/20 mx-auto mb-4" />
                 <h4 className="text-white font-serif text-lg font-bold mb-2">No Matching Manifests</h4>
                 <p className="text-platinum/50 text-sm max-w-sm mx-auto font-light">
@@ -536,6 +555,55 @@ function SearchResultsContent() {
           </div>
         </div>
       </div>
+
+      {/* Mobile Filter Modal Bottom Sheet */}
+      <AnimatePresence>
+        {mobileFilterOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden flex flex-col justify-end bg-black/80 backdrop-blur-sm">
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="bg-[#09090c] border-t border-gold/30 rounded-t-3xl p-6 max-h-[85vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
+                <h3 className="text-white font-serif font-bold text-lg flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-gold" /> Filter Manifests
+                </h3>
+                <button
+                  onClick={() => setMobileFilterOpen(false)}
+                  className="p-2 rounded-full bg-white/5 text-platinum/60 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {renderFilterContent()}
+
+              <div className="pt-6 border-t border-white/10 mt-6 flex gap-3">
+                <button
+                  onClick={() => {
+                    setSelectedAirlines([]);
+                    setSelectedStops([]);
+                    setSelectedAircrafts([]);
+                    setMaxPrice(1500);
+                  }}
+                  className="flex-1 py-3 rounded-xl border border-white/15 text-xs text-platinum font-mono uppercase"
+                >
+                  Reset
+                </button>
+                <button
+                  onClick={() => setMobileFilterOpen(false)}
+                  className="flex-1 py-3 rounded-xl bg-gold text-onyx font-bold text-xs font-mono uppercase shadow-[0_0_15px_rgba(212,175,55,0.4)]"
+                >
+                  Apply Filters ({filteredFlights.length})
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
