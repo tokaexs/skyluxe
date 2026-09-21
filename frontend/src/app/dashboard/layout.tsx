@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Plane, LayoutDashboard, ShieldCheck, Wallet, User, Bell, LogOut, Gift, Star, Map, Navigation, Sparkles, Activity, Award, Home as HomeIcon, Menu, X } from "lucide-react";
+import { Plane, LayoutDashboard, ShieldCheck, Wallet, User, Bell, LogOut, Gift, Star, Map, Navigation, Sparkles, Activity, Award, Home as HomeIcon, Menu, X, Zap } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useSkyLuxeStore } from "@/store/skyluxeStore";
 import { useUser, UserButton } from "@clerk/nextjs";
@@ -47,6 +47,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: "Concierge Logs", href: "/dashboard/concierge", icon: Navigation },
     { name: "AI Recommendations", href: "/dashboard/recommendations", icon: Sparkles },
     { name: "Travel Analytics", href: "/dashboard/analytics", icon: Activity },
+    { name: "ARIS Intelligence", href: "/dashboard/aris", icon: Zap, badge: "LIVE" },
     { name: "Security Center", href: "/dashboard/security", icon: ShieldCheck },
     { name: "Profile & Specs", href: "/dashboard/profile", icon: User },
     { name: "Notifications", href: "/dashboard/notifications", icon: Bell, badge: unreadNotifCount },
@@ -54,11 +55,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (profile?.role === "admin") {
     links.push({ name: "Admin Airlines", href: "/dashboard/admin/airlines", icon: ShieldCheck });
-  }
-
-  // Allow admin to access the ARIS control tower
-  if (profile?.role === "admin" || profile?.role === "executive" || profile?.role === "ceo") {
-    links.push({ name: "Reintelligence (ARIS)", href: "/dashboard/aris", icon: Activity });
   }
 
   const renderNavLinks = () => (
@@ -73,7 +69,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <Icon className={`w-4 h-4 ${isActive ? 'text-gold' : 'text-platinum/40'}`} />
                 {link.name}
               </span>
-              {link.badge && link.badge > 0 ? (
+              {link.badge ? (
                 <span className="bg-gold text-onyx text-[9px] font-bold px-1.5 py-0.5 rounded-full font-mono">{link.badge}</span>
               ) : null}
             </span>

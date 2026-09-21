@@ -96,7 +96,7 @@ function CheckoutContent() {
 
   const handleDownloadPDF = () => {
     if (!generatedTicket || !generatedTicket.bookingDbId) return;
-    window.open(`http://localhost:5000/api/v1/bookings/${generatedTicket.bookingDbId}/boarding-pass/download`, "_blank");
+    window.open(`/api/v1/bookings/${generatedTicket.bookingDbId}/boarding-pass/download`, "_blank");
   };
 
   useEffect(() => {
