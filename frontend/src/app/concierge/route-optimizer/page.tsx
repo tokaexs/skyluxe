@@ -26,7 +26,11 @@ interface RouteOption {
 export default function RouteOptimizer() {
   const [fromCode, setFromCode] = useState("BOM");
   const [toCode, setToCode] = useState("DWC");
-  const [date, setDate] = useState("2026-06-04");
+  const [date, setDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split("T")[0];
+  });
   const [passengers, setPassengers] = useState(3);
   const [purpose, setPurpose] = useState("Business");
   const [budget, setBudget] = useState(60000);

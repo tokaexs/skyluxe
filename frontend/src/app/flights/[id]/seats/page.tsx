@@ -44,11 +44,20 @@ function SeatsContent() {
   const flightId = (params?.id as string) || "AI-101";
   const fromCode = searchParams.get("from") || "BOM";
   const toCode = searchParams.get("to") || "DXB";
-  const dateStr = searchParams.get("date") || "2026-06-04";
+  const dateStr = searchParams.get("date") || (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split("T")[0];
+  })();
   const passengers = Number(searchParams.get("passengers")) || 1;
 
   const { currency, formatAmount } = useSkyLuxeStore();
-  const basePrice = flightId === "EK-505" ? 780 : flightId === "UK-202" ? 420 : flightId === "AI-101" ? 350 : 180;
+  const queryPrice = Number(searchParams.get("price")) || Number(searchParams.get("total")) || 0;
+  const airlineName = searchParams.get("airline") || "SpiceJet";
+  const aircraftModel = searchParams.get("aircraft") || "Boeing 737-800";
+  const cabinClass = (searchParams.get("class") || "economy").toLowerCase();
+
+  const basePrice = queryPrice > 0 ? queryPrice : (flightId.startsWith("EK") ? 780 : flightId.startsWith("UK") ? 420 : flightId.startsWith("AI") ? 350 : 65);
   const [selectedSeat, setSelectedSeat] = useState<string | null>(null);
   const [surcharge, setSurcharge] = useState(0);
   const [seatLabel, setSeatLabel] = useState("");
@@ -60,18 +69,18 @@ function SeatsContent() {
     // Calculate surcharge
     // @ts-ignore
     const config = seatTypes[type];
-    let charge = config.surcharge;
+    let charge = config ? config.surcharge : 0;
     if (isEmergency) charge += 15; // extra emergency exit fee
     setSurcharge(charge);
-    setSeatLabel(config.label + (isEmergency ? " (Emergency Exit)" : ""));
+    setSeatLabel((config ? config.label : "Standard Seat") + (isEmergency ? " (Emergency Exit)" : ""));
   };
 
-  // Base price + dynamic 15% taxes + dynamic seat surcharge
-  const totalPrice = (basePrice + Math.round(basePrice * 0.15) + surcharge) * passengers;
+  // Base price + seat surcharge
+  const totalPrice = (basePrice + surcharge) * passengers;
 
   const handleConfirm = () => {
     if (!selectedSeat) return;
-    router.push(`/checkout?type=commercial&id=${flightId}&seat=${selectedSeat}&price=${totalPrice}&from=${fromCode}&to=${toCode}&date=${dateStr}&passengers=${passengers}`);
+    router.push(`/checkout?type=commercial&id=${flightId}&flightId=${flightId}&seat=${selectedSeat}&price=${totalPrice}&total=${totalPrice}&from=${fromCode}&to=${toCode}&date=${dateStr}&passengers=${passengers}&class=${cabinClass}&airline=${encodeURIComponent(airlineName)}&aircraft=${encodeURIComponent(aircraftModel)}`);
   };
 
   return (

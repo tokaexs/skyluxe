@@ -6,13 +6,18 @@ import { ArrowRight, Plane, MapPin, Calendar, Search } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import LuxuryDatePicker from "@/components/ui/LuxuryDatePicker";
+import CityAirportSelect from "@/components/ui/CityAirportSelect";
 
 export default function CommercialSearch() {
   const router = useRouter();
   const [tripType, setTripType] = useState("one-way");
   const [fromCity, setFromCity] = useState("Mumbai (BOM)");
   const [toCity, setToCity] = useState("Dubai (DXB)");
-  const [date, setDate] = useState("2026-06-04");
+  const [date, setDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split("T")[0];
+  });
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,39 +103,21 @@ export default function CommercialSearch() {
 
               <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
                 <div className="md:col-span-3">
-                  <label className="text-[10px] text-platinum/50 uppercase tracking-widest mb-2 flex items-center gap-1">
-                    <MapPin className="w-3 h-3 text-gold" /> From
-                  </label>
-                  <select 
-                    value={fromCity}
-                    onChange={(e) => setFromCity(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:border-gold/50 focus:outline-none transition-colors font-medium text-sm appearance-none"
-                  >
-                    <option value="Mumbai (BOM)">Mumbai (BOM)</option>
-                    <option value="Delhi (DEL)">Delhi (DEL)</option>
-                    <option value="Bengaluru (BLR)">Bengaluru (BLR)</option>
-                    <option value="London (LHR)">London (LHR)</option>
-                    <option value="Dubai (DXB)">Dubai (DXB)</option>
-                  </select>
+                  <CityAirportSelect 
+                    label="From" 
+                    value={fromCity} 
+                    onChange={(val) => setFromCity(val)} 
+                  />
                 </div>
                 <div className="hidden md:flex md:col-span-1 items-center justify-center pb-4 text-platinum/30">
                   <ArrowRight className="w-5 h-5" />
                 </div>
                 <div className="md:col-span-3">
-                  <label className="text-[10px] text-platinum/50 uppercase tracking-widest mb-2 flex items-center gap-1">
-                    <MapPin className="w-3 h-3 text-gold" /> To
-                  </label>
-                  <select 
-                    value={toCity}
-                    onChange={(e) => setToCity(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:border-gold/50 focus:outline-none transition-colors font-medium text-sm appearance-none"
-                  >
-                    <option value="Dubai (DXB)">Dubai (DXB)</option>
-                    <option value="London (LHR)">London (LHR)</option>
-                    <option value="Mumbai (BOM)">Mumbai (BOM)</option>
-                    <option value="Delhi (DEL)">Delhi (DEL)</option>
-                    <option value="Bengaluru (BLR)">Bengaluru (BLR)</option>
-                  </select>
+                  <CityAirportSelect 
+                    label="To" 
+                    value={toCity} 
+                    onChange={(val) => setToCity(val)} 
+                  />
                 </div>
                 <div className="md:col-span-3">
                   <label className="text-[10px] text-platinum/50 uppercase tracking-widest mb-2 flex items-center gap-1 font-mono">

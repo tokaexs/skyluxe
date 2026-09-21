@@ -30,19 +30,33 @@ const loadRazorpayScript = () => {
 function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useUser();
+  const { user, isSignedIn, isLoaded } = useUser();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const type = searchParams.get("type") || "private";
-  const itemId = searchParams.get("id") || "gulfstream-g700";
+  const itemId = searchParams.get("id") || searchParams.get("flightId") || (type === "commercial" ? "SG-101" : "gulfstream-g700");
+  const airlineName = searchParams.get("airline") || (type === "commercial" ? "SpiceJet" : "SkyLuxe Private");
+  const aircraftModel = searchParams.get("aircraft") || (type === "commercial" ? "Boeing 737-800" : "Gulfstream G700");
   const seat = searchParams.get("seat") || "";
-  const queryPrice = Number(searchParams.get("price")) || 51500;
+  const cabinClass = (searchParams.get("class") || "economy").toLowerCase();
+  const passengers = Number(searchParams.get("passengers")) || 1;
+  
+  // Extract real dynamic price passed from flight search / details
+  const rawPrice = Number(searchParams.get("price")) || Number(searchParams.get("total")) || 0;
+  const defaultCommercialPrice = 65 * passengers;
+  const defaultPrivatePrice = 51500;
+  const queryPrice = rawPrice > 0 ? rawPrice : (type === "commercial" ? defaultCommercialPrice : defaultPrivatePrice);
+
   const fromCode = searchParams.get("from") || "BOM";
   const toCode = searchParams.get("to") || "DWC";
-  const dateStr = searchParams.get("date") || "2026-06-04";
+  const dateStr = searchParams.get("date") || (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split("T")[0];
+  })();
   const catering = searchParams.get("catering") || "Standard VIP Catering";
   const chauffeur = searchParams.get("chauffeur") || "No Transport Required";
   const security = searchParams.get("security") || "Standard Terminal Security";
-  const passengers = Number(searchParams.get("passengers")) || 3;
   const seatRow = seat ? parseInt(seat.match(/^(\d+)/)?.[1] || "0") : 0;
 
   let legsList = [];
@@ -55,7 +69,7 @@ function CheckoutContent() {
     legsList = [{ from: fromCode, to: toCode, date: dateStr }];
   }
 
-  const { walletBalance, chargeWallet, addCoins, bookFlight, fetchInitialData, profile, currency, setCurrency, formatAmount } = useSkyLuxeStore();
+  const { walletBalance, chargeWallet, addCoins, bookFlight, fetchInitialData, profile, currency, setCurrency, formatAmount, syncUserFromClerk } = useSkyLuxeStore();
   const [checkoutState, setCheckoutState] = useState<"idle" | "processing" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [generatedTicket, setGeneratedTicket] = useState<FlightBooking | null>(null);
@@ -89,16 +103,31 @@ function CheckoutContent() {
     fetchInitialData();
   }, [fetchInitialData]);
 
+  // Sync Clerk authenticated user into profile store immediately
+  useEffect(() => {
+    if (user) {
+      syncUserFromClerk(user);
+    }
+  }, [user, syncUserFromClerk]);
+
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Verify user authentication before allowing payment authorization
+    const hasAuth = Boolean(isSignedIn || (user && user.id) || (profile && profile.id && profile.id !== "guest_user"));
+    if (!hasAuth) {
+      setCheckoutState("idle");
+      setAuthModalOpen(true);
+      return;
+    }
+
     setCheckoutState("processing");
 
     try {
-      if (!profile || !profile.id) {
-        setCheckoutState("error");
-        setErrorMessage("User profile is not loaded yet. Please wait or log in again.");
-        return;
-      }
+      const effectiveUserId = user?.id || profile?.id || "user_active";
+      const effectiveUserName = user?.fullName || `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || profile?.name || "SkyLuxe Member";
+      const effectiveUserEmail = user?.primaryEmailAddress?.emailAddress || profile?.email || "member@skyluxe.com";
+      const effectiveUserPhone = user?.primaryPhoneNumber?.phoneNumber || profile?.phone || "+1 (555) 019-9233";
 
       if (paymentOption === "wallet") {
         if (walletBalance < queryPrice) {
@@ -129,7 +158,7 @@ function CheckoutContent() {
           price: queryPrice
         };
 
-        const bookingData = await api.post<any>(`${endpoint}?user_id=${profile.id}`, payload);
+        const bookingData = await api.post<any>(`${endpoint}?user_id=${effectiveUserId}`, payload);
         if (bookingData) {
           const mapped: FlightBooking = {
             id: bookingData._id.substring(0, 8).toUpperCase(),
@@ -182,7 +211,7 @@ function CheckoutContent() {
         amount: queryPrice,
         type: type,
         itemId: itemId,
-        userId: profile.id
+        userId: effectiveUserId
       });
 
       const { orderId, amount, currency, keyId } = orderRes;
@@ -319,9 +348,9 @@ function CheckoutContent() {
           });
         },
         prefill: {
-          name: profile.name,
-          email: profile.email,
-          contact: profile.phone
+          name: effectiveUserName,
+          email: effectiveUserEmail,
+          contact: effectiveUserPhone
         },
         theme: {
           color: "#D4AF37"
@@ -404,26 +433,24 @@ function CheckoutContent() {
 
                 {type === "commercial" && (
                   <>
-                    <h1 className="text-2xl sm:text-4xl font-serif font-bold text-white mb-2">{itemId.toUpperCase()} Commercial</h1>
-                    <p className="text-platinum/50 font-light mb-8 sm:mb-12">{fromCode} — {toCode} (Seat {seat})</p>
+                    <h1 className="text-2xl sm:text-4xl font-serif font-bold text-white mb-2">{airlineName}</h1>
+                    <p className="text-platinum/50 font-light mb-8 sm:mb-12 font-mono text-xs sm:text-sm">
+                      {fromCode} — {toCode} • {itemId.toUpperCase()} • {aircraftModel} {seat ? `(Seat ${seat})` : `(${cabinClass.toUpperCase()})`}
+                    </p>
 
                     <div className="space-y-4 sm:space-y-6 border-b border-white/10 pb-6 sm:pb-8 mb-6 sm:mb-8">
                       <div className="flex justify-between items-center text-platinum/80 font-light text-xs sm:text-sm">
-                        <span>Scheduled Ticket Base Price</span>
-                        <span className="text-white font-mono">{formatAmount(queryPrice - (seatRow > 0 && seatRow <= 3 ? 150 : seatRow >= 4 && seatRow <= 7 ? 80 : 0))}</span>
+                        <span>{airlineName} Airfare ({passengers} Passenger{passengers > 1 ? "s" : ""})</span>
+                        <span className="text-white font-mono">{formatAmount(Math.round(queryPrice * 0.83))}</span>
                       </div>
-                      {seatRow > 0 && seatRow <= 3 && (
-                        <div className="flex justify-between items-center text-platinum/80 font-light text-xs sm:text-sm">
-                          <span>First Class Suite Allocation</span>
-                          <span className="text-white font-mono">{formatAmount(150)}</span>
-                        </div>
-                      )}
-                      {seatRow >= 4 && seatRow <= 7 && (
-                        <div className="flex justify-between items-center text-platinum/80 font-light text-xs sm:text-sm">
-                          <span>Business Flatbed Surcharge</span>
-                          <span className="text-white font-mono">{formatAmount(80)}</span>
-                        </div>
-                      )}
+                      <div className="flex justify-between items-center text-platinum/80 font-light text-xs sm:text-sm">
+                        <span>Airport Development Fee & Government Taxes</span>
+                        <span className="text-white font-mono">{formatAmount(Math.round(queryPrice * 0.12))}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-platinum/80 font-light text-xs sm:text-sm">
+                        <span>FBO Terminal Security & Bag Tagging</span>
+                        <span className="text-white font-mono">{formatAmount(Math.round(queryPrice * 0.05))}</span>
+                      </div>
                     </div>
                   </>
                 )}
@@ -557,25 +584,43 @@ function CheckoutContent() {
                     <span className="text-gold font-bold text-lg">{formatAmount(queryPrice)}</span>
                   </div>
 
+                  {!isSignedIn && !user && (
+                    <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-transparent border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5">
+                        <Lock className="w-4 h-4 text-amber-400 shrink-0" />
+                        <span className="text-xs text-amber-200">
+                          Please sign in or create an account to authorize payment & issue your e-Ticket.
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setAuthModalOpen(true)}
+                        className="px-3 py-1.5 rounded-xl bg-gold text-onyx font-bold font-mono text-[10px] uppercase shadow-[0_0_10px_rgba(212,175,55,0.3)] hover:brightness-110 shrink-0 cursor-pointer"
+                      >
+                        Login / Signup
+                      </button>
+                    </div>
+                  )}
+
                   {paymentOption === "wallet" ? (
                     <button
                       type="submit"
-                      disabled={walletBalance < queryPrice}
-                      className={`w-full py-5 rounded-xl text-onyx font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2 group mt-8 ${walletBalance >= queryPrice
+                      disabled={walletBalance < queryPrice && Boolean(isSignedIn || user)}
+                      className={`w-full py-5 rounded-xl text-onyx font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2 group mt-6 ${walletBalance >= queryPrice || (!isSignedIn && !user)
                         ? "bg-gold hover:bg-gold-light shadow-[0_0_20px_rgba(212,175,55,0.3)] cursor-pointer"
                         : "bg-white/10 text-platinum/40 cursor-not-allowed border border-white/5"
                         }`}
                     >
                       <Lock className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                      Confirm Wallet Settlement
+                      {!isSignedIn && !user ? "Sign In & Confirm Settlement" : "Confirm Wallet Settlement"}
                     </button>
                   ) : (
                     <button
                       type="submit"
-                      className="w-full py-5 rounded-xl bg-gold hover:bg-gold-light text-onyx font-bold text-lg transition-all duration-300 shadow-[0_0_20px_rgba(212,175,55,0.3)] flex items-center justify-center gap-2 group mt-8 cursor-pointer"
+                      className="w-full py-5 rounded-xl bg-gold hover:bg-gold-light text-onyx font-bold text-lg transition-all duration-300 shadow-[0_0_20px_rgba(212,175,55,0.3)] flex items-center justify-center gap-2 group mt-6 cursor-pointer"
                     >
                       <Lock className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                      Pay via Razorpay Secure
+                      {!isSignedIn && !user ? "Sign In & Pay Securely" : "Pay via Razorpay Secure"}
                     </button>
                   )}
 
@@ -822,6 +867,64 @@ function CheckoutContent() {
               </motion.div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Login / Sign Up Required Modal Dialog */}
+      <AnimatePresence>
+        {authModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ duration: 0.25 }}
+              className="w-full max-w-md bg-[#0c0c10] border border-gold/40 rounded-3xl p-6 sm:p-8 shadow-[0_0_50px_rgba(212,175,55,0.25)] relative overflow-hidden text-center"
+            >
+              <div className="absolute top-0 right-0 w-48 h-48 bg-gold/15 rounded-full blur-[60px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+              
+              <div className="w-14 h-14 rounded-2xl bg-gold/15 border border-gold/40 flex items-center justify-center mx-auto mb-4 text-gold shadow-[0_0_20px_rgba(212,175,55,0.25)]">
+                <Lock className="w-7 h-7" />
+              </div>
+
+              <h3 className="text-xl sm:text-2xl font-serif font-bold text-white mb-2">
+                Sign In / Sign Up Required
+              </h3>
+
+              <p className="text-platinum/70 text-xs sm:text-sm font-light leading-relaxed mb-6">
+                Please log in to your account or create a new one to secure your booking on <strong className="text-white font-medium">{airlineName}</strong> and generate your verified e-Ticket & boarding pass.
+              </p>
+
+              <div className="space-y-3">
+                <button
+                  onClick={() => {
+                    const returnUrl = typeof window !== "undefined" ? window.location.href : "/checkout";
+                    router.push(`/sign-in?redirect_url=${encodeURIComponent(returnUrl)}`);
+                  }}
+                  className="w-full py-3.5 rounded-xl bg-gold text-onyx font-bold text-xs uppercase font-mono tracking-wider shadow-[0_0_20px_rgba(212,175,55,0.4)] hover:brightness-110 transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  Sign In to Continue
+                </button>
+
+                <button
+                  onClick={() => {
+                    const returnUrl = typeof window !== "undefined" ? window.location.href : "/checkout";
+                    router.push(`/sign-up?redirect_url=${encodeURIComponent(returnUrl)}`);
+                  }}
+                  className="w-full py-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase font-mono tracking-wider border border-white/15 transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  Create New Account
+                </button>
+
+                <button
+                  onClick={() => setAuthModalOpen(false)}
+                  className="w-full py-2.5 text-platinum/50 hover:text-white text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer"
+                >
+                  Dismiss & Return to Checkout
+                </button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </>

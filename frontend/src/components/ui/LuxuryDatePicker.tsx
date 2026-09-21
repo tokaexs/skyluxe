@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, ChevronLeft, ChevronRight, Sparkles, X } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface LuxuryDatePickerProps {
   value: string; // "YYYY-MM-DD"
@@ -118,6 +118,8 @@ export default function LuxuryDatePicker({
   })() : placeholder;
 
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   const isToday = (day: number) =>
     today.getFullYear() === currentYear &&
     today.getMonth() === currentMonth &&
@@ -127,6 +129,12 @@ export default function LuxuryDatePicker({
     if (!value) return false;
     const [y, m, d] = value.split("-").map(Number);
     return y === currentYear && m === currentMonth + 1 && d === day;
+  };
+
+  const isPast = (day: number) => {
+    const checkDate = new Date(currentYear, currentMonth, day);
+    checkDate.setHours(0, 0, 0, 0);
+    return checkDate < today;
   };
 
   return (
@@ -170,7 +178,7 @@ export default function LuxuryDatePicker({
                   {MONTH_NAMES[currentMonth]} <span className="text-gold">{currentYear}</span>
                 </h4>
                 <p className="text-[10px] font-mono text-platinum/40 uppercase tracking-widest">
-                  Aviation Flight Schedule
+                  Live Aviation Calendar
                 </p>
               </div>
 
@@ -214,7 +222,7 @@ export default function LuxuryDatePicker({
                 return (
                   <span
                     key={`prev-${i}`}
-                    className="h-9 flex items-center justify-center text-xs text-zinc-600 font-mono"
+                    className="h-9 flex items-center justify-center text-xs text-zinc-700 font-mono opacity-40"
                   >
                     {dayNum}
                   </span>
@@ -226,18 +234,22 @@ export default function LuxuryDatePicker({
                 const dayNum = i + 1;
                 const active = isSelected(dayNum);
                 const current = isToday(dayNum);
+                const past = isPast(dayNum);
 
                 return (
                   <button
                     key={`day-${dayNum}`}
                     type="button"
-                    onClick={() => handleSelectDate(dayNum)}
-                    className={`h-9 w-full flex flex-col items-center justify-center rounded-xl text-xs font-mono transition-all relative group cursor-pointer ${
-                      active
-                        ? "bg-gradient-to-r from-gold via-gold-light to-white text-black font-bold shadow-[0_0_15px_rgba(212,175,55,0.6)] scale-105 z-20"
+                    disabled={past}
+                    onClick={() => !past && handleSelectDate(dayNum)}
+                    className={`h-9 w-full flex flex-col items-center justify-center rounded-xl text-xs font-mono transition-all relative group ${
+                      past
+                        ? "text-zinc-700 cursor-not-allowed opacity-30"
+                        : active
+                        ? "bg-gradient-to-r from-gold via-gold-light to-white text-black font-bold shadow-[0_0_15px_rgba(212,175,55,0.6)] scale-105 z-20 cursor-pointer"
                         : current
-                        ? "bg-white/10 text-gold border border-gold/40 hover:bg-gold/20 font-bold"
-                        : "text-platinum/90 hover:bg-white/10 hover:text-white border border-transparent hover:border-white/10"
+                        ? "bg-white/10 text-gold border border-gold/40 hover:bg-gold/20 font-bold cursor-pointer"
+                        : "text-platinum/90 hover:bg-white/10 hover:text-white border border-transparent hover:border-white/10 cursor-pointer"
                     }`}
                   >
                     <span>{dayNum}</span>
@@ -267,17 +279,17 @@ export default function LuxuryDatePicker({
               </button>
               <button
                 type="button"
+                onClick={() => setQuickPreset(3)}
+                className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-gold/20 text-platinum/70 hover:text-gold text-[10px] font-mono uppercase tracking-wider transition-colors border border-white/5"
+              >
+                +3 Days
+              </button>
+              <button
+                type="button"
                 onClick={() => setQuickPreset(7)}
                 className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-gold/20 text-platinum/70 hover:text-gold text-[10px] font-mono uppercase tracking-wider transition-colors border border-white/5"
               >
                 +1 Week
-              </button>
-              <button
-                type="button"
-                onClick={() => setQuickPreset(30)}
-                className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-gold/20 text-platinum/70 hover:text-gold text-[10px] font-mono uppercase tracking-wider transition-colors border border-white/5"
-              >
-                +1 Month
               </button>
             </div>
           </motion.div>

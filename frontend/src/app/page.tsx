@@ -12,6 +12,7 @@ import { useRef, useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import GlassNavbar from "@/components/ui/GlassNavbar";
 import LuxuryDatePicker from "@/components/ui/LuxuryDatePicker";
+import CityAirportSelect from "@/components/ui/CityAirportSelect";
 import { useAuth } from "@/context/AuthContext";
 import { useSkyLuxeStore } from "@/store/skyluxeStore";
 import { useUser } from "@clerk/nextjs";
@@ -171,7 +172,11 @@ function HomeContent() {
   const [statsTriggered, setStatsTriggered] = useState(false);
   const [fromCity, setFromCity] = useState("Mumbai (BOM)");
   const [toCity, setToCity] = useState("Dubai (DXB)");
-  const [departDate, setDepartDate] = useState("2026-06-04");
+  const [departDate, setDepartDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split("T")[0];
+  });
   const [passengers, setPassengers] = useState(1);
   const [cabinClass, setCabinClass] = useState("Business Class");
   const [tripType, setTripType] = useState("one-way");
@@ -846,17 +851,11 @@ function HomeContent() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-5 items-end">
                 <div className="md:col-span-3">
-                  <label className="text-[10px] text-platinum/50 uppercase tracking-widest mb-2 flex items-center gap-1.5 font-mono">
-                    <MapPin className="w-3.5 h-3.5 text-gold" /> Origin FBO
-                  </label>
-                  <select value={fromCity} onChange={(e) => setFromCity(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:border-gold/50 focus:outline-none transition-all text-sm appearance-none cursor-pointer hover:border-white/20">
-                    <option value="Mumbai (BOM)">Mumbai (BOM)</option>
-                    <option value="Delhi (DEL)">Delhi (DEL)</option>
-                    <option value="Bengaluru (BLR)">Bengaluru (BLR)</option>
-                    <option value="London (LHR)">London (LHR)</option>
-                    <option value="Dubai (DXB)">Dubai (DXB)</option>
-                  </select>
+                  <CityAirportSelect
+                    label="Origin FBO / City"
+                    value={fromCity}
+                    onChange={(val) => setFromCity(val)}
+                  />
                 </div>
                 <div className="hidden md:flex md:col-span-1 items-center justify-center pb-4">
                   <div className="w-8 h-8 rounded-full border border-gold/30 bg-gold/10 flex items-center justify-center">
@@ -864,17 +863,11 @@ function HomeContent() {
                   </div>
                 </div>
                 <div className="md:col-span-3">
-                  <label className="text-[10px] text-platinum/50 uppercase tracking-widest mb-2 flex items-center gap-1.5 font-mono">
-                    <MapPin className="w-3.5 h-3.5 text-gold" /> Destination FBO
-                  </label>
-                  <select value={toCity} onChange={(e) => setToCity(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:border-gold/50 focus:outline-none transition-all text-sm appearance-none cursor-pointer hover:border-white/20">
-                    <option value="Dubai (DXB)">Dubai (DXB)</option>
-                    <option value="London (LHR)">London (LHR)</option>
-                    <option value="Mumbai (BOM)">Mumbai (BOM)</option>
-                    <option value="Delhi (DEL)">Delhi (DEL)</option>
-                    <option value="Bengaluru (BLR)">Bengaluru (BLR)</option>
-                  </select>
+                  <CityAirportSelect
+                    label="Destination FBO / City"
+                    value={toCity}
+                    onChange={(val) => setToCity(val)}
+                  />
                 </div>
                 <div className="md:col-span-2">
                   <label className="text-[10px] text-platinum/50 uppercase tracking-widest mb-2 flex items-center gap-1.5 font-mono">

@@ -25,7 +25,11 @@ export default function JetConfiguration() {
   const id = typeof params.id === 'string' ? params.id : 'gulfstream-g700';
   const jet = jetDatabase[id] || jetDatabase["gulfstream-g700"];
 
-  const [legs, setLegs] = useState([{ from: "BOM", to: "DWC", date: "2026-06-04" }]);
+  const [legs, setLegs] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return [{ from: "BOM", to: "DWC", date: d.toISOString().split("T")[0] }];
+  });
   const [catering, setCatering] = useState("Standard VIP Catering");
   const [chauffeur, setChauffeur] = useState("No Transport Required");
   const [security, setSecurity] = useState("Standard Terminal Security");

@@ -23,7 +23,11 @@ function DetailsContent() {
   const flightId = searchParams.get("flightId") || "AI-101";
   const fromCode = searchParams.get("from") || "BOM";
   const toCode = searchParams.get("to") || "DXB";
-  const dateStr = searchParams.get("date") || "2026-06-04";
+  const dateStr = searchParams.get("date") || (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split("T")[0];
+  })();
 
   const flight = flightDetailDB[flightId] || flightDetailDB["AI-101"];
 

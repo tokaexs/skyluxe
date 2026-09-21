@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:5000/api/v1";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api/v1";
 
 function getCookie(name: string): string | null {
   if (typeof document === "undefined") return null;
@@ -20,17 +20,37 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     ...(options.headers || {}),
   };
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  const url = endpoint.startsWith("http") ? endpoint : `${BASE_URL}${endpoint}`;
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || errorData.message || errorData.error || `API request failed with status ${response.status}`);
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || errorData.message || errorData.error || `API request failed with status ${response.status}`);
+    }
+
+    return response.json();
+  } catch (err: any) {
+    // If the configured BASE_URL is an external host (e.g. localhost:5000) and fails with network error, fallback to relative /api/v1
+    if (BASE_URL !== "/api/v1" && !endpoint.startsWith("http")) {
+      try {
+        const fallbackRes = await fetch(`/api/v1${endpoint}`, {
+          ...options,
+          headers,
+        });
+        if (fallbackRes.ok) {
+          return fallbackRes.json();
+        }
+      } catch {
+        // Fallback also failed, rethrow original error
+      }
+    }
+    throw err;
   }
-
-  return response.json();
 }
 
 export const api = {
