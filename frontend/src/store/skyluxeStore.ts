@@ -142,7 +142,10 @@ interface SkyLuxeState {
  
   // Currency Settings
   currency: "USD" | "INR";
- 
+
+  // Theme Settings
+  theme: "dark" | "light";
+
   // Actions
   fetchInitialData: () => Promise<void>;
   syncUserFromClerk: (user: any) => void;
@@ -163,6 +166,8 @@ interface SkyLuxeState {
   removeSavedCard: (id: string) => void;
   withdrawFunds: (amount: number) => Promise<boolean>;
   setCurrency: (currency: "USD" | "INR") => void;
+  setTheme: (theme: "dark" | "light") => void;
+  toggleTheme: () => void;
   formatAmount: (amount: number) => string;
   cancelBooking: (bookingId: string) => Promise<boolean>;
 }
@@ -184,7 +189,9 @@ export const useSkyLuxeStore = create<SkyLuxeState>((set, get) => ({
   },
   
   currency: "USD",
+  theme: "dark",
   walletBalance: 450000,
+
   
   transactions: [
     { id: "TX-2901", title: "Aircraft Charter: BOM - DWC", date: "May 28, 2026", amount: -51500, type: "debit", invoice: "INV-2901" },
@@ -636,6 +643,23 @@ export const useSkyLuxeStore = create<SkyLuxeState>((set, get) => ({
     }
   },
   setCurrency: (currency) => set({ currency }),
+  setTheme: (theme) => {
+    set({ theme });
+    if (typeof window !== "undefined") {
+      localStorage.setItem("skyluxe-theme", theme);
+      if (theme === "light") {
+        document.documentElement.classList.remove("dark");
+        document.documentElement.classList.add("light");
+      } else {
+        document.documentElement.classList.remove("light");
+        document.documentElement.classList.add("dark");
+      }
+    }
+  },
+  toggleTheme: () => {
+    const next = get().theme === "dark" ? "light" : "dark";
+    get().setTheme(next);
+  },
   formatAmount: (amount) => {
     const isUSD = get().currency === "USD";
     const absVal = Math.abs(amount);
@@ -664,3 +688,4 @@ export const useSkyLuxeStore = create<SkyLuxeState>((set, get) => ({
     }
   }
 }));
+

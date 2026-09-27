@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-motion";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Plane, Menu, X, Sparkles, Crown, Wind, Navigation, Star } from "lucide-react";
+import { Plane, Menu, X, Sparkles, Crown, Wind, Navigation, Star, Sun, Moon } from "lucide-react";
 import { Show, UserButton } from "@clerk/nextjs";
 import { useSkyLuxeStore } from "@/store/skyluxeStore";
 
@@ -12,7 +13,7 @@ export default function GlassNavbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { scrollY } = useScroll();
-  const { currency, setCurrency } = useSkyLuxeStore();
+  const { currency, setCurrency, theme, toggleTheme } = useSkyLuxeStore();
   const pathname = usePathname();
 
   useMotionValueEvent(scrollY, "change", (latest) => {
@@ -64,15 +65,28 @@ export default function GlassNavbar() {
           </Link>
 
           {/* Desktop Nav */}
-          <div id="tour-nav" className="hidden lg:flex items-center gap-7">
+          <div id="tour-nav" className="hidden lg:flex items-center gap-6">
             <NavLink href="/">Home</NavLink>
             <NavLink href="/fleet">Private Jets</NavLink>
             <NavLink href="/commercial">Commercial Flights</NavLink>
             <NavLink href="/concierge">Concierge AI</NavLink>
             <NavLink href="/membership">Elite Membership</NavLink>
 
+            {/* Theme Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              title={`Switch to ${theme === "dark" ? "Light" : "Dark"} Mode`}
+              className="p-2 rounded-xl bg-white/5 border border-white/10 text-platinum hover:text-gold hover:border-gold/40 transition-all flex items-center justify-center cursor-pointer shadow-sm"
+            >
+              {theme === "dark" ? (
+                <Sun className="w-4 h-4 text-amber-400" />
+              ) : (
+                <Moon className="w-4 h-4 text-blue-500" />
+              )}
+            </button>
+
             {/* Currency Toggle */}
-            <div id="tour-currency" className="flex bg-white/5 border border-white/10 p-0.5 rounded-xl text-[10px] ml-2">
+            <div id="tour-currency" className="flex bg-white/5 border border-white/10 p-0.5 rounded-xl text-[10px]">
               <button 
                 onClick={() => setCurrency("USD")}
                 className={`px-2.5 py-1 rounded-lg transition-all ${currency === "USD" ? "bg-gold text-onyx font-bold" : "text-platinum/60 hover:text-white"}`}
@@ -122,7 +136,20 @@ export default function GlassNavbar() {
           </div>
 
           {/* Mobile Right Controls & Hamburger */}
-          <div className="flex items-center gap-3 lg:hidden">
+          <div className="flex items-center gap-2.5 lg:hidden">
+            {/* Theme Toggle Button Mobile */}
+            <button
+              onClick={toggleTheme}
+              title={`Switch to ${theme === "dark" ? "Light" : "Dark"} Mode`}
+              className="p-2 rounded-lg bg-white/5 border border-white/10 text-platinum"
+            >
+              {theme === "dark" ? (
+                <Sun className="w-4 h-4 text-amber-400" />
+              ) : (
+                <Moon className="w-4 h-4 text-blue-500" />
+              )}
+            </button>
+
             {/* Quick currency on mobile bar */}
             <div className="flex bg-white/5 border border-white/10 p-0.5 rounded-lg text-[10px]">
               <button 
@@ -159,6 +186,7 @@ export default function GlassNavbar() {
           </div>
         </div>
       </motion.nav>
+
 
       {/* Mobile Drawer Overlay */}
       <AnimatePresence>

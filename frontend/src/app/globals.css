@@ -11,6 +11,17 @@
   --platinum: #E5E4E2;
 }
 
+html.light {
+  --background: #F8F9FA;
+  --foreground: #0B0D13;
+  
+  --onyx: #FFFFFF;
+  --onyx-light: #F1F3F7;
+  --gold: #B38728;
+  --gold-light: #D4AF37;
+  --platinum: #383E4C;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -31,6 +42,7 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Glassmorphism Utilities */
@@ -47,6 +59,148 @@ body {
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(212, 175, 55, 0.2);
 }
+
+/* ========================================================= */
+/* LUXURY LIGHT MODE (HAUTE COUTURE EDITORIAL ALABASTER)     */
+/* ========================================================= */
+html.light body {
+  background-color: #F8F9FA;
+  color: #0B0D13;
+}
+
+/* Pearlescent Frosted Glass Panels */
+html.light .glass-panel {
+  background: rgba(255, 255, 255, 0.86) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(212, 175, 55, 0.18) !important;
+  box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.05), 0 0 20px rgba(212, 175, 55, 0.06), inset 0 1px 0 rgba(255, 255, 255, 1) !important;
+}
+
+html.light .glass-panel-gold {
+  background: rgba(212, 175, 55, 0.08) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(179, 135, 40, 0.3) !important;
+  box-shadow: 0 15px 35px -10px rgba(179, 135, 40, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+
+/* High-Contrast Obsidian Typography */
+html.light .text-white {
+  color: #0B0D13 !important;
+}
+
+html.light .text-platinum {
+  color: #383E4C !important;
+}
+
+html.light .text-platinum\/80 {
+  color: #3F4452 !important;
+}
+
+html.light .text-platinum\/70,
+html.light .text-platinum\/60 {
+  color: #555B6A !important;
+}
+
+html.light .text-platinum\/50,
+html.light .text-platinum\/40 {
+  color: #727888 !important;
+}
+
+/* Container & Surface Overrides */
+html.light .bg-onyx\/90,
+html.light .bg-onyx\/85,
+html.light .bg-onyx\/80,
+html.light .bg-onyx\/75,
+html.light .bg-onyx\/70,
+html.light .bg-onyx\/60,
+html.light .bg-onyx\/50,
+html.light .bg-onyx {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+}
+
+html.light .bg-\[\#020202\],
+html.light .bg-\[\#050505\],
+html.light .bg-\[\#070709\],
+html.light .bg-\[\#07070a\],
+html.light .bg-\[\#0A0A0A\],
+html.light .bg-\[\#0C0C0F\],
+html.light .bg-\[\#0D0D10\],
+html.light .bg-\[\#111114\],
+html.light .bg-\[\#12110C\],
+html.light .bg-\[\#14120B\],
+html.light .bg-\[\#1A160D\],
+html.light .bg-\[\#1E1A0F\] {
+  background-color: #FFFFFF !important;
+}
+
+html.light .bg-white\/\[0\.02\],
+html.light .bg-white\/\[0\.03\],
+html.light .bg-white\/\[0\.04\],
+html.light .bg-white\/\[0\.05\],
+html.light .bg-white\/5,
+html.light .bg-white\/10 {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+html.light .border-white\/5,
+html.light .border-white\/10,
+html.light .border-white\/15,
+html.light .border-white\/20 {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+html.light .bg-black\/50,
+html.light .bg-black\/60,
+html.light .bg-black\/70,
+html.light .bg-black\/75,
+html.light .bg-black\/80,
+html.light .bg-black\/85,
+html.light .bg-black\/90,
+html.light .bg-black\/95 {
+  background-color: rgba(255, 255, 255, 0.94) !important;
+  color: #0B0D13 !important;
+}
+
+/* Form Inputs, Dropdowns, and Selectors in Light Mode */
+html.light select,
+html.light input[type="text"],
+html.light input[type="number"],
+html.light textarea {
+  background-color: #FFFFFF !important;
+  color: #0B0D13 !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+html.light select option {
+  background-color: #FFFFFF !important;
+  color: #0B0D13 !important;
+}
+
+/* Modals & Dialog Overlays in Light Mode */
+html.light .fixed .bg-black\/85,
+html.light .fixed .bg-black\/90 {
+  background-color: rgba(15, 23, 42, 0.6) !important;
+}
+
+/* Ensure Gold Buttons retain rich contrast and gold embers */
+html.light .bg-gold,
+html.light .bg-gradient-to-r.from-gold {
+  color: #0B0D13 !important;
+  box-shadow: 0 8px 25px rgba(179, 135, 40, 0.25) !important;
+}
+
+html.light .bg-gold *,
+html.light .bg-gradient-to-r.from-gold * {
+  color: #0B0D13 !important;
+}
+
+html.light .text-gold {
+  color: #B38728 !important;
+}
+
+
 
 /* Custom Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
@@ -149,4 +303,46 @@ html.lenis, html.lenis body {
   background-color: #07070a !important;
   border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
+
+/* Clerk Light Mode Popover Overrides */
+html.light .cl-userButtonPopoverCard {
+  background-color: #FFFFFF !important;
+  background: #FFFFFF !important;
+  border: 1px solid rgba(212, 175, 55, 0.3) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12), 0 0 25px rgba(212, 175, 55, 0.15) !important;
+}
+
+html.light .cl-userButtonPopoverMain {
+  background-color: #FFFFFF !important;
+}
+
+html.light .cl-userButtonPopoverActionButton {
+  background-color: #F8F9FA !important;
+  color: #0B0D13 !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+html.light .cl-userButtonPopoverActionButton:hover {
+  background-color: rgba(212, 175, 55, 0.15) !important;
+  border-color: rgba(212, 175, 55, 0.4) !important;
+}
+
+html.light .cl-userButtonPopoverActionButtonText {
+  color: #0B0D13 !important;
+}
+
+html.light .cl-userPreview {
+  background-color: #F8F9FA !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+html.light .cl-userPreviewMainIdentifier {
+  color: #0B0D13 !important;
+}
+
+html.light .cl-userButtonPopoverFooter {
+  background-color: #F1F3F7 !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
 

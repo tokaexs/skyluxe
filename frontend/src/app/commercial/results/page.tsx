@@ -161,17 +161,20 @@ function ResultsContent() {
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: idx * 0.05 }}
-                className="glass-panel p-5 sm:p-6 rounded-3xl border border-white/10 hover:border-gold/40 transition-all shadow-xl group flex flex-col md:flex-row gap-5 md:gap-8 items-start md:items-center"
+                className="glass-panel p-5 sm:p-6 rounded-3xl border border-white/10 hover:border-gold/40 transition-all shadow-xl group flex flex-col md:flex-row gap-5 md:gap-8 items-start md:items-center bg-onyx/80 backdrop-blur-2xl"
               >
                 {/* Airline Info */}
                 <div className="w-full md:w-1/4 flex items-center gap-3.5">
                   <CommercialLogo logoUrl={flight.logo} airlineName={flight.airline} />
                   <div className="flex flex-col min-w-0">
-                    <p className="text-sm font-bold text-white truncate">{flight.airline}</p>
+                    <p className="text-sm font-bold text-white truncate group-hover:text-gold transition-colors">{flight.airline}</p>
                     <p className="text-[11px] font-mono text-platinum/50 truncate">{flight.flightNumber} • {flight.aircraft}</p>
-                    <div className="flex items-center gap-1.5 mt-1">
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                       <span className="text-[9px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded font-mono flex items-center gap-1">
-                        <Leaf className="w-2.5 h-2.5" /> {flight.eco.diffPercent}% CO₂
+                        <Leaf className="w-2.5 h-2.5" /> {flight.eco?.diffPercent || -14}% CO₂
+                      </span>
+                      <span className="text-[9px] bg-gold/10 text-gold border border-gold/20 px-1.5 py-0.5 rounded font-mono">
+                        Fast-Track FBO
                       </span>
                     </div>
                   </div>
@@ -186,10 +189,10 @@ function ResultsContent() {
 
                   <div className="flex-1 flex flex-col items-center px-2">
                     <p className="text-[10px] text-platinum/50 uppercase tracking-widest font-mono mb-1">{flight.duration}</p>
-                    <div className="w-full border-t border-dashed border-white/20 relative">
+                    <div className="w-full border-t border-dashed border-gold/30 relative">
                       <Plane className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 text-gold rotate-90" />
                     </div>
-                    <p className="text-[9px] text-emerald-400 font-mono uppercase tracking-widest mt-1">Non-stop</p>
+                    <p className="text-[9px] text-emerald-400 font-mono uppercase tracking-widest mt-1">Non-stop • Priority Gate</p>
                   </div>
 
                   <div className="text-right min-w-[65px]">
@@ -201,7 +204,7 @@ function ResultsContent() {
                 {/* Pricing & CTA */}
                 <div className="w-full md:w-1/4 flex flex-row md:flex-col items-center md:items-end justify-between border-t md:border-t-0 md:border-l border-white/10 pt-3 md:pt-0 md:pl-6 gap-3">
                   <div className="text-left md:text-right">
-                    <span className="text-[10px] text-platinum/50 font-mono uppercase block">{flight.classType}</span>
+                    <span className="text-[10px] text-gold font-mono uppercase font-bold block">{flight.classType}</span>
                     <span className="text-2xl sm:text-3xl font-bold text-white font-serif">{formatAmount(flight.price)}</span>
                   </div>
                   
@@ -209,8 +212,9 @@ function ResultsContent() {
                     href={`/flights/${flight.id}?from=${fromCode}&to=${toCode}&date=${dateStr}&passengers=${passengers}&class=${selectedClass === "All" ? "economy" : selectedClass.toLowerCase()}&price=${flight.price}&airline=${encodeURIComponent(flight.airline)}&aircraft=${encodeURIComponent(flight.aircraft)}`} 
                     className="w-full sm:w-auto md:w-full"
                   >
-                    <button className="w-full py-2.5 px-4 rounded-xl bg-gold/20 text-gold border border-gold/40 font-bold hover:bg-gold hover:text-onyx transition-all text-xs font-mono uppercase tracking-wider cursor-pointer shadow-[0_0_12px_rgba(212,175,55,0.2)]">
-                      Select Flight
+                    <button className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-gold via-gold-light to-gold text-onyx font-bold hover:shadow-[0_0_20px_rgba(212,175,55,0.5)] transition-all text-xs font-mono uppercase tracking-wider cursor-pointer shadow-md flex items-center justify-center gap-1.5">
+                      <span>Reserve Suite</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </Link>
                 </div>
