@@ -22,6 +22,8 @@ if (!match) {
   throw new Error('Could not locate privateJets array in fleet/page.tsx');
 }
 
+let raw = match[1];
+
 // Convert the small TS/JS syntax differences into evaluable JS.
 raw = raw
   .replace(/:\s*"[^"]+"/g, (m) => m)
