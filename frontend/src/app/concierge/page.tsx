@@ -2,11 +2,12 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import GlassNavbar from "@/components/ui/GlassNavbar";
-import { Mic, Send, Sparkles, MapPin, Calendar, PlaneTakeoff, Navigation, Wind, ShieldCheck, ArrowRight, X, Activity } from "lucide-react";
+import { Mic, Send, Sparkles, MapPin, Calendar, PlaneTakeoff, Navigation, Wind, ShieldCheck, ArrowRight, X, Activity, ChevronDown, ChevronUp } from "lucide-react";
 import AtmosphericGlobe from "@/components/3d/AtmosphericGlobe";
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { useSkyLuxeStore } from "@/store/skyluxeStore";
+import { HeroSection } from "@/components/ui/hero-section-dark";
 
 type Message = {
   id: string;
@@ -32,6 +33,7 @@ export default function ConciergeAI() {
 
   // Modals state
   const [activeModal, setActiveModal] = useState<'routeOptimization' | 'approveRoute' | 'destinationBrief' | null>(null);
+  const [showBriefing, setShowBriefing] = useState(false);
 
   // Auto-scroll chat
   useEffect(() => {
@@ -89,7 +91,7 @@ export default function ConciergeAI() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="flex justify-between items-end mb-8 border-b border-white/10 pb-6"
+          className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b border-white/10 pb-6 gap-4"
         >
           <div>
             <div className="inline-flex items-center gap-2 mb-2">
@@ -98,14 +100,59 @@ export default function ConciergeAI() {
             </div>
             <h1 className="text-4xl font-serif font-bold text-white tracking-tight">Executive AI Operator</h1>
           </div>
-          <div className="text-right hidden md:block">
-            <p className="text-xs text-platinum/40 uppercase tracking-widest font-mono mb-1">System Status</p>
-            <div className="flex items-center gap-2 text-sm text-green-400 font-mono">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              Intelligence Online
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setShowBriefing(!showBriefing)}
+              className="px-4 py-2 rounded-xl bg-gold/10 hover:bg-gold/20 border border-gold/30 text-gold text-xs font-mono uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              {showBriefing ? "Hide AI Overview" : "Explore Cortex AI"}
+              {showBriefing ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
+            <div className="text-right hidden md:block">
+              <p className="text-xs text-platinum/40 uppercase tracking-widest font-mono mb-1">System Status</p>
+              <div className="flex items-center gap-2 text-sm text-green-400 font-mono">
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                Intelligence Online
+              </div>
             </div>
           </div>
         </motion.div>
+
+        {/* Expandable Hero Briefing Section */}
+        <AnimatePresence>
+          {showBriefing && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.4 }}
+              className="mb-8 overflow-hidden rounded-3xl border border-gold/30 bg-onyx/80 backdrop-blur-xl shadow-2xl"
+            >
+              <HeroSection
+                title="CORTEX NEURAL DESK • v4.2"
+                subtitle={{
+                  regular: "Autonomous private aviation & ",
+                  gradient: "cognitive AI concierge.",
+                }}
+                description="Harness hyper-intelligent routing algorithms, instant empty leg clearances, bespoke in-flight culinary curation, and 24/7 sovereign dispatch."
+                ctaText="Direct Command Mode"
+                ctaHref="#neural-chat-console"
+                bottomImage={{
+                  light: "https://images.unsplash.com/photo-1540962351504-03099e0a754b?q=80&w=1600&auto=format&fit=crop",
+                  dark: "https://images.unsplash.com/photo-1508873696983-2df5293cb32f?q=80&w=1600&auto=format&fit=crop",
+                }}
+                gridOptions={{
+                  angle: 65,
+                  cellSize: 50,
+                  opacity: 0.35,
+                  lightLineColor: "#D4AF37",
+                  darkLineColor: "#D4AF37",
+                }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Multi-Panel AI Workspace */}
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0">
@@ -257,7 +304,7 @@ export default function ConciergeAI() {
             </div>
 
             {/* Futuristic Input Console */}
-            <div className="p-6 relative z-10 border-t border-white/10 bg-black/40 backdrop-blur-2xl">
+            <div id="neural-chat-console" className="p-6 relative z-10 border-t border-white/10 bg-black/40 backdrop-blur-2xl">
               <div className="flex gap-2 mb-4">
                 <button onClick={() => setInputValue("Book a flight from Mumbai to Dubai for next week.")} className="px-3 py-1.5 rounded-full border border-white/10 text-platinum/60 hover:text-gold hover:border-gold/30 transition-colors text-xs font-light bg-white/5">
                   ✈️ Mumbai to Dubai
